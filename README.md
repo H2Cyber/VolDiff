@@ -20,7 +20,7 @@ Directions:
 </pre>
 "profile" should be "Win7SP0x86" or "Win7SP1x64" etc.
 
-VolDiff will save the output of a selection of Volatility plugins for both memory images (baseline and infected), then create a report to highlight notable changes (new processes, network connections, injected code, drivers etc).
+VolDiff will save the output of a selection of Volatility plugins for both memory images (baseline and infected), then it will create a report to highlight notable changes (new processes, network connections, injected code, drivers etc).
 
 
 Sample Output
