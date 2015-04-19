@@ -1,9 +1,7 @@
 
-VolDiff
-=======
+VolDiff Malware Memory Footprint Analysis
+==========================================
 
-Automated malware memory footprint analysis.
----------------------------------------------
 VolDiff is a quick malware triage tool used to identify IOCs using Volatility.
 
 Directions:
