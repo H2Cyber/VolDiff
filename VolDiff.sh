@@ -236,7 +236,7 @@ do
         echo -e "\nHint: privs was run with the -s switch. It will only show the privileges that were not enabled by default." >> $output_dir/$report
       fi
       if [[ $plugin = "malfind" ]] ; then
-        echo -e "\nHint: Suspicious malfind processes were dumped to disk, and can be reversed as normal or uploaded to VT. IPs and domains from the entire memory image were dumped to disk under $output_dir/strings/ips-domains (too verbose to be included here). Use grep -A 10 and -B 10 to investigate strings located next to suspicious ones." >> $output_dir/$report
+        echo -e "\nHint: Suspicious malfind processes were dumped to disk, and can be reversed as normal or uploaded to VT. IPs and domains from the entire memory image were dumped to disk under $output_dir/strings/ips-domains (too verbose to be included here). Use grep -A 10 and -B 10 to investigate strings located next to suspicious ones. Note that strings/diff-strings-vol.txt includes strings and associated PIDs, and thus should be grepped for suspicious PIDs, or strings." >> $output_dir/$report
       fi
       if [[ $plugin = "getsids" ]] ; then 
         echo -e "\nHint: Check the output of handles for suspicious processes, and grep for mutants, then Google those. Also grep the output of ldrmodules for any hidden dlls associated with suspicious processes. Note that the procexedump and dlldump volatility plugins can be used to respectively dump processes and DLLs from memory to disk." >> $output_dir/$report
