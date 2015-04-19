@@ -27,7 +27,7 @@ fi
 if [[ $@ =~ "--version" ]] ; then
   echo -e "This is free software: you are free to change and redistribute it."
   echo -e "There is NO WARRANTY, to the extent permitted by law."
-  echo -e "Written by Houcem Hachicha aka @aim4r."
+  echo -e "Written by Houcem Hachicha @aim4r. Report bugs to houcem.hachicha[@]gmail.com."
   exit
 fi
 
@@ -250,5 +250,6 @@ do
   fi
 done
 echo -e "\nEnd of report." >> $output_dir/$report
+
 endtime=$(date +%s)
 echo -e "\nAll done in $(($endtime - $starttime)) seconds, report saved to $output_dir/$report."
