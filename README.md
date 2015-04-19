@@ -2,7 +2,7 @@
 VolDiff Malware Memory Footprint Analysis
 ==========================================
 
-VolDiff is a quick malware analysis tool based on Volatility.
+VolDiff is a malware analysis tool based on Volatility.
 
 Directions:
 -----------
@@ -13,7 +13,7 @@ Directions:
 
 3. Run VolDiff as follows: "./VolDiff.sh baseline.raw infected.raw <profile>" where <profile> is Win7SP0x86 or Win7SP1x64 etc.
 
-VolDiff will save the output of a selection of Volatility plugins for both memory images (baseline and infected), then create a report to highlight changes. A sample report available here: https://github.com/houcem/VolDiff/blob/master/sample-report.txt
+VolDiff will save the output of a selection of Volatility plugins for both memory images (baseline and infected), then create a report to highlight notable changes (new processes, network connections, injected code, drivers etc). A sample report available here: https://github.com/houcem/VolDiff/blob/master/sample-report.txt
 
 Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
 
