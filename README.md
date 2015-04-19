@@ -13,7 +13,7 @@ Directions:
 
 3. Run VolDiff:
 
-./VolDiff.sh path/to/baseline.raw path/to/infected.raw \<profile\>"
+./VolDiff.sh path/to/baseline.raw path/to/infected.raw \<profile\>
 
 \<profile\> should be Win7SP0x86 or Win7SP1x64 etc.
 
