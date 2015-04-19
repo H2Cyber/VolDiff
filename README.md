@@ -10,6 +10,6 @@ Directions:
 
 VolDiff will save the output of a selection of volatility plugins for both memory images (baseline and infected), and create a report to highlight changes.
 
-Tested using Volatility 2.4 (vol.py) and Windows 7 images.
+Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
 
 Please report bugs to houcem.hachicha[@]gmail.com.
