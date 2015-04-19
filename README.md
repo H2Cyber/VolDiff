@@ -21,7 +21,7 @@ VolDiff will save the output of a selection of Volatility plugins for both memor
 
 Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
 
-Errors?
+Bugs
 -----------
 
 Please report bugs to houcem.hachicha[@]gmail.com.
@@ -175,20 +175,10 @@ Flags: CommitCharge: 65537, MemCommit: 1, PrivateMemory: 1, Protection: 6
 Suspicious new timeliner entries
 =========================================================================
 
-1970-01-01 00:00:00 UTC+0000|[NETWORK CONNECTION]| 0.0.0.0:80 -> 0.0.0.0:0| 2108/TCPv4/LISTENING/0x3daeccf8
-1970-01-01 00:00:00 UTC+0000|[NETWORK CONNECTION]| 172.16.108.128:139 -> 0.0.0.0:0| 4/TCPv4/LISTENING/0x3da3f618
 1970-01-01 00:00:00 UTC+0000|[NETWORK CONNECTION]| 172.16.108.128:49164 -> 65.55.50.157:443| 924/TCPv4/CLOSED/0x3fc7b630
 1970-01-01 00:00:00 UTC+0000|[NETWORK CONNECTION]| 172.16.108.128:49165 -> 62.24.131.168:80| 924/TCPv4/CLOSED/0x3fc8b5f0
 1970-01-01 00:00:00 UTC+0000|[NETWORK CONNECTION]| 172.16.108.128:49167 -> 62.24.131.168:80| 924/TCPv4/CLOSED/0x3dad8008
 1970-01-01 00:00:00 UTC+0000|[NETWORK CONNECTION]| 172.16.108.128:49168 -> 87.236.215.151:80| 2108/TCPv4/CLOSED/0x3fdf2348
-2009-06-04 05:25:08 UTC+0000|[PE HEADER (exe)]| mscorsvw.exe| Process: mscorsvw.exe/PID: 3176/PPID: 508/Process POffset: 0x3e135538/DLL Base: 0x10000000
-2009-07-13 23:11:23 UTC+0000|[PE HEADER (exe)]| services.exe| Process: services.exe/PID: 508/PPID: 412/Process POffset: 0x2594c3a8/DLL Base: 0x00200000
-2009-07-13 23:19:28 UTC+0000|[PE HEADER (exe)]| svchost.exe| Process: svchost.exe/PID: 640/PPID: 508/Process POffset: 0x3e072c48/DLL Base: 0x00220000
-2009-07-13 23:25:37 UTC+0000|[PE HEADER (exe)]| conhost.exe| Process: conhost.exe/PID: 2184/PPID: 424/Process POffset: 0x3da32030/DLL Base: 0x00ce0000
-2009-07-13 23:37:00 UTC+0000|[PE HEADER (exe)]| winlogon.exe| Process: winlogon.exe/PID: 480/PPID: 404/Process POffset: 0x3e368628/DLL Base: 0x00120000
-2009-07-14 00:02:42 UTC+0000|[PE HEADER (exe)]| lsm.exe| Process: lsm.exe/PID: 524/PPID: 412/Process POffset: 0x3e014030/DLL Base: 0x00f30000
-2012-06-02 22:12:17 UTC+0000|[PE HEADER (exe)]| wuauclt.exe| Process: wuauclt.exe/PID: 3976/PPID: 924/Process POffset: 0x3f9c9738/DLL Base: 0x00ac0000
-2015-02-06 22:03:09 UTC+0000|[PE HEADER (exe)]| vmtoolsd.exe| Process: vmtoolsd.exe/PID: 1544/PPID: 508/Process POffset: 0x3e178130/DLL Base: 0x00140000
 2015-04-18 22:49:24 UTC+0000|[PROCESS]| lsm.exe| PID: 524/PPID: 412/POffset: 0x3e014030
 2015-04-18 22:49:24 UTC+0000|[PROCESS]| services.exe| PID: 508/PPID: 412/POffset: 0x2594c3a8
 2015-04-18 22:49:24 UTC+0000|[PROCESS]| winlogon.exe| PID: 480/PPID: 404/POffset: 0x3e368628
@@ -245,6 +235,7 @@ cmd.exe pid:   1184
 conhost.exe pid:   2560
 ipconfig.exe pid:   2544
 
+
 Suspicious new mutantscan entries
 =========================================================================
 
@@ -259,13 +250,6 @@ Offset(P)              #Ptr     #Hnd Signal Thread           CID Name
 0x000000003f99a228        2        1      1 0x00000000           WininetStartupMutex
 0x000000003f9ddef8        2        1      0 0x872aabe0  2108:668 cb16681dee85a67993f0759da19566be
 0x000000003fcd69a0        2        1      1 0x00000000           WininetConnectionMutex
-0x000000003fd4dcd8        4        3      1 0x00000000           C::Users:victim:AppData:Local:Microsoft:Windows:Explorer:thumbcache_1024.db!dfMaintainer
-0x000000003fd4dd38        4        3      1 0x00000000           C::Users:victim:AppData:Local:Microsoft:Windows:Explorer:thumbcache_256.db!dfMaintainer
-0x000000003fd4dd98        4        3      1 0x00000000           C::Users:victim:AppData:Local:Microsoft:Windows:Explorer:thumbcache_96.db!dfMaintainer
-0x000000003fd886b0        4        3      1 0x00000000           C::Users:victim:AppData:Local:Microsoft:Windows:Explorer:thumbcache_idx.db!ThumbnailCacheInit
-0x000000003fd88710        4        3      1 0x00000000           C::Users:victim:AppData:Local:Microsoft:Windows:Explorer:thumbcache_sr.db!dfMaintainer
-0x000000003fdd7438        2        1      1 0x00000000           _!MSFTHISTORY!_
-C::Users:victim:AppData:Local:Microsoft:Windows:Explorer:thumbcache_idx.db!rwWriterMutex
 
 Suspicious new getsids entries
 =========================================================================
@@ -299,6 +283,8 @@ ipconfig.exe (2544): S-1-1-0 (Everyone)
 ipconfig.exe (2544): S-1-5-11 (Authenticated Users)
 ipconfig.exe (2544): S-1-16-16384 (System Mandatory Level)
 
-End of report.
-
 </pre>
+
+Licence
+--------
+Free open source software.
