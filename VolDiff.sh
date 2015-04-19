@@ -13,7 +13,7 @@ if [[ $@ =~ "--help" ]] ; then
   echo -e "2. Execute your malware sample on the same system, then take a second memory dump and save it as \"infected.raw\""
   echo -e "3. Run VolDiff as follows: \"./VolDiff.sh baseline.raw infected.raw <profile>\" where <profile> is Win7SP0x86 or Win7SP1x64 etc"
   echo -e "VolDiff will save the output of a selection of volatility plugins for both memory images (baseline and infected), and create a report to highlight changes."
-  echo -e "\nTested using Volatility 2.4 (vol.py) on Windows 7 images. Please use the --dependencies switch for information about dependencies."
+  echo -e "\nTested using Volatility 2.4 (vol.py) on Windows 7 images."
   echo -e "\n--dependencies	display information about script dependencies and exit"
   echo -e "--help		display this help and exit"
   echo -e "--add-hints	add useful hints to the report"
@@ -250,6 +250,5 @@ do
   fi
 done
 echo -e "\nEnd of report." >> $output_dir/$report
-
 endtime=$(date +%s)
 echo -e "\nAll done in $(($endtime - $starttime)) seconds, report saved to $output_dir/$report."
