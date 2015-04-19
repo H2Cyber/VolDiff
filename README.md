@@ -1,5 +1,5 @@
 
-VolDiff Malware Memory Footprint Analysis
+VolDiff: Malware Memory Footprint Analysis
 ==========================================
 
 VolDiff is a malware analysis tool based on Volatility.
