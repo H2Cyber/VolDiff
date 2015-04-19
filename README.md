@@ -21,10 +21,6 @@ VolDiff will save the output of a selection of Volatility plugins for both memor
 
 Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
 
-Bugs
------------
-
-Please report bugs to houcem.hachicha[@]gmail.com.
 
 Sample Output
 ---------------
@@ -288,3 +284,5 @@ ipconfig.exe (2544): S-1-16-16384 (System Mandatory Level)
 Licence
 --------
 Free open source software.
+
+Please report bugs to houcem.hachicha[@]gmail.com.
