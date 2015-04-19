@@ -7,8 +7,8 @@ VolDiff is a bash script that runs Volatility plugins against memory images capt
 VolDiff is a simple yet powerfull malware analysis tool that enables malware analysts to quickly identify IOCs and understand advanced malware behaviour.
 
 
-Directions:
------------
+Use Directions
+----------------
 
 1. Capture a memory dump of a clean Windows system and save it as "baseline.raw". This image will serve as a baseline for the analysis.
 
