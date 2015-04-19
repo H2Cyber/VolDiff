@@ -11,8 +11,9 @@ Directions:
 
 2. Execute your malware sample on the same system, then take a second memory dump and save it as "infected.raw".
 
-3. Run VolDiff as follows:
-  ./VolDiff.sh path/to/baseline.raw path/to/infected.raw \<profile\>"
+3. Run VolDiff:
+
+./VolDiff.sh path/to/baseline.raw path/to/infected.raw \<profile\>"
 
 \<profile\> should be Win7SP0x86 or Win7SP1x64 etc.
 
