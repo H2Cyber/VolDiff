@@ -286,4 +286,4 @@ Licence
 --------
 Free open source software.
 
-This toom was tested using Volatility 2.4 (vol.py) and Windows 7 memory images. Please report bugs to houcem.hachicha[@]gmail.com.
+This tool was tested using Volatility 2.4 (vol.py) and Windows 7 memory images. Please report bugs to houcem.hachicha[@]gmail.com.
