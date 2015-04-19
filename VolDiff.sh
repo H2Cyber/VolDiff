@@ -3,23 +3,31 @@
 # Written by Houcem Hachicha aka @aim4r.
 
 version="0.9.1"
-echo -e "VolDiff v$version"
 
+################################ PRINT AMAZING BANNER ################################
+echo -e " _    __      ______  _ ________"
+echo -e "| |  / /___  / / __ \(_) __/ __/"
+echo -e "| | / / __ \/ / / / / / /_/ /_  "
+echo -e "| |/ / /_/ / / /_/ / / __/ __/  "
+echo -e "|___/\____/_/_____/_/_/ /_/     "
+
+echo -e "\nVolDiff: Malware Memory Footprint Analysis (v$version)"
 ################################ HELP SECTION ################################
 if [[ $@ =~ "--help" ]] ; then
-  echo -e "Usage: ./VolDiff.sh BASELINE_IMAGE INFECTED_IMAGE PROFILE [OPTION]"
+  echo -e "\nUsage: ./VolDiff.sh BASELINE_IMAGE INFECTED_IMAGE PROFILE [OPTION]"
   echo -e "\nDirections:" 
   echo -e "1. Capture a memory dump of a clean Windows system and save it as \"baseline.raw\". This image will serve as a baseline for the analysis."
   echo -e "2. Execute your malware sample on the same system, then take a second memory dump and save it as \"infected.raw\""
   echo -e "3. Run VolDiff as follows: \"./VolDiff.sh baseline.raw infected.raw <profile>\" where <profile> is Win7SP0x86 or Win7SP1x64 etc"
-  echo -e "VolDiff will save the output of a selection of volatility plugins for both memory images (baseline and infected), and create a report to highlight changes."
-  echo -e "\nTested using Volatility 2.4 (vol.py) on Windows 7 images."
-  echo -e "\n--dependencies	display information about script dependencies and exit"
+  echo -e "VolDiff will save the output of a selection of volatility plugins for both memory images (baseline and infected), then it will create a report to highlight notable changes (new processes, network connections, injected code, suspicious drivers etc)."
+  echo -e "\nOptions:"
+  echo -e "--dependencies	display information about script dependencies and exit"
   echo -e "--help		display this help and exit"
   echo -e "--add-hints	add useful hints to the report"
   echo -e "--no-report	do not create a report"
   echo -e "--version	display script version information and exit"
-  echo -e "\nReport bugs (and share ideas) to houcem.hachicha[@]gmail.com"
+  echo -e "\nTested using Volatility 2.4 (vol.py) on Windows 7 images."
+  echo -e "Report bugs to houcem.hachicha[@]gmail.com"
   exit
 fi
 
@@ -33,8 +41,7 @@ fi
 
 ################################ DEPENDENCIES SECTION ################################
 if [[ $@ =~ "--dependencies" ]] ; then
-  echo -e "Dependencies:" 
-  echo -e "- volatility 2.4 (vol.py) - https://github.com/volatilityfoundation/volatility"
+  echo -e "Requires volatility 2.4 (vol.py) to be installed."
   exit
 fi
 
