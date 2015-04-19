@@ -244,6 +244,9 @@ do
       if [[ $plugin = "mutantscan" ]] ; then 
         echo -e "\nHint: Google mutants associated with suspicious processes." >> $output_dir/$report
       fi
+      if [[ $plugin = "ldrmodules" ]] ; then 
+        echo -e "\nHint: DLLs that are not located under System32 are suspicious." >> $output_dir/$report
+      fi
     fi
   else
     echo "None" >> $output_dir/$report
