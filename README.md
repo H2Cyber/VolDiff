@@ -284,6 +284,10 @@ ipconfig.exe (2544): S-1-16-16384 (System Mandatory Level)
 
 Licence
 --------
-Free open source software.
+Free open source software. 
 
-This tool was tested using Volatility 2.4 (vol.py) and Windows 7 memory images. Please report bugs to houcem.hachicha[@]gmail.com.
+Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
+
+Feedback and bugs
+-------------------
+Please submit feedback, report bugs or ideas to houcem.hachicha[@]gmail.com.
