@@ -279,8 +279,8 @@ ipconfig.exe (2544): S-1-16-16384 (System Mandatory Level)
 
 </pre>
 
-Useful options
----------------
+Options
+--------
 Use --help option to view all the available options.
 
 Licence
