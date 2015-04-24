@@ -2,7 +2,7 @@
 # VolDiff malware analysis script.
 # Written by Houcem Hachicha aka @aim4r.
 
-version="0.9.1"
+version="0.9.2"
 
 ################################ PRINT AMAZING BANNER ################################
 echo -e " _    __      ______  _ ________"
@@ -21,11 +21,12 @@ if [[ $@ =~ "--help" ]] ; then
   echo -e "3. Run VolDiff as follows: \"./VolDiff.sh baseline.raw infected.raw <profile>\" where <profile> is Win7SP0x86 or Win7SP1x64 etc"
   echo -e "VolDiff will save the output of a selection of volatility plugins for both memory images (baseline and infected), then it will create a report to highlight notable changes (new processes, network connections, injected code, suspicious drivers etc)."
   echo -e "\nOptions:"
-  echo -e "--dependencies	display information about script dependencies and exit"
-  echo -e "--help		display this help and exit"
-  echo -e "--add-hints	add useful hints to the report"
-  echo -e "--no-report	do not create a report"
-  echo -e "--version	display script version information and exit"
+  echo -e "--dependencies		display information about script dependencies and exit"
+  echo -e "--help			display this help and exit"
+  echo -e "--add-hints		add useful hints to the report"
+  echo -e "--no-report		do not create a report"
+  echo -e "--process-checks	perform extra process checks to find anomalies"
+  echo -e "--version		display script version information and exit"
   echo -e "\nTested using Volatility 2.4 (vol.py) on Windows 7 images."
   echo -e "Report bugs to houcem.hachicha[@]gmail.com"
   exit
@@ -161,7 +162,7 @@ echo -e "Report bugs to houcem.hachicha[@]gmail.com." >> $output_dir/$report
 for plugin in netscan pslist psscan psxview ldrmodules malfind timeliner svcscan cmdline consoles drivermodule driverscan modscan callbacks orphanthreads devicetree mutantscan getsids privs
 do
   echo -e "\n\nSuspicious new $plugin entries" >> $output_dir/$report
-  echo -e "=========================================================================\n" >> $output_dir/$report
+  echo -e "================================================================================\n" >> $output_dir/$report
   if [[ -s $output_dir/$plugin/diff-$plugin.txt ]] ; then
      # special processing for psxview
     if [[ $plugin = "psxview" ]] ; then
@@ -216,7 +217,7 @@ do
     # additional processing for malfind dumped processes 
     if [[ $plugin = "malfind" ]] ; then      
       echo -e "\n\nSuspicious ips/domains/emails found in dumped processes (malfind)" >> $output_dir/$report
-      echo -e "=========================================================================\n" >> $output_dir/$report
+      echo -e "================================================================================\n" >> $output_dir/$report
       strings -a -td $output_dir/malfind/dump-dir-infected/* > $output_dir/malfind/dump-dir-infected/malfind-strings.temp 
       cat $output_dir/malfind/dump-dir-infected/malfind-strings.temp | grep -oE '\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]' | uniq >> $output_dir/malfind/dump-dir-infected/infected-ip-domains.temp
       cat $output_dir/malfind/dump-dir-infected/malfind-strings.temp | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | uniq >> $output_dir/malfind/dump-dir-infected/infected-ip-domains.temp
@@ -259,6 +260,119 @@ do
     echo "None" >> $output_dir/$report
   fi
 done
+
+if [[ $@ =~ "--process-checks" ]] ; then
+  echo -e "Hunting for anomalies in $infected_memory_image processes..."
+  # Verify PID of System process = 4
+  cat $output_dir/psscan/infected-psscan.txt | grep " System " | tr -s ' ' | cut -d " " -f 3 > system-pids.tmp
+  while read pid; do
+    if [[ $pid != "4" ]] ; then
+      echo -e "\n\nSuspicious 'System' process running with PID $pid (expected PID 4)." >> $output_dir/process-checks.tmp
+    fi
+  done < system-pids.tmp
+  rm system-pids.tmp
+
+  # Verify only one instance of certain processes is running
+  for process in " services.exe" " System" " wininit.exe" " smss.exe" " lsass.exe"; do
+    if [[ "$(cat $output_dir/psscan/infected-psscan.txt | grep $process | wc -l)" != "1" ]] ; then
+      echo -e "\n\nMultiple instances of$process are running. Only one instance should exist.\n" >> $output_dir/process-checks.tmp
+      sed -n '2p' $output_dir/psscan/infected-psscan.txt >> $output_dir/process-checks.tmp
+      sed -n '3p' $output_dir/psscan/infected-psscan.txt >> $output_dir/process-checks.tmp
+      cat $output_dir/psscan/infected-psscan.txt | grep $process >> $output_dir/process-checks.tmp    
+    fi
+  done
+
+  # Verify that some processes do not have a child
+  for process in "lsass.exe" "lsm.exe"; do
+    cat $output_dir/psscan/infected-psscan.txt | grep $process | tr -s ' ' | cut -d " " -f 3 >> pids.tmp
+  done
+  cat $output_dir/psscan/infected-psscan.txt | tr -s ' ' | cut -d " " -f 4 >> ppids.tmp
+  while read pid; do
+    while read ppid; do
+      if [[ "$pid" == "$ppid" ]]; then
+        echo -e "\n\nProcess with (PID $ppid) is not supposed to be a parent.\n" >> $output_dir/process-checks.tmp
+        sed -n '2p' $output_dir/psscan/infected-psscan.txt >> $output_dir/process-checks.tmp
+        sed -n '3p' $output_dir/psscan/infected-psscan.txt >> $output_dir/process-checks.tmp
+        cat $output_dir/psscan/infected-psscan.txt | grep " $ppid " >> $output_dir/process-checks.tmp    
+      fi
+    done < ppids.tmp
+  done < pids.tmp
+  rm pids.tmp ppids.tmp
+
+  # Verify child/parent process relationships
+  for child in " svchost.exe" " smss.exe" " services.exe" " lsass.exe" " lsm.exe" " dllhost.exe" " taskhost.exe" " spoolsv.exe"; do        
+    if [[ $child = " svchost.exe" ]] || [[ $child = " dllhost.exe" ]] || [[ $child = " taskhost.exe" ]] || [[ $child = " spoolsv.exe" ]]; then parent=" services.exe"; fi
+    if [[ $child = " smss.exe" ]]; then parent=" System"; fi
+    if [[ $child = " services.exe" ]] || [[ $child = " lsass.exe" ]] || [[ $child = " lsm.exe" ]]; then parent=" wininit.exe"; fi
+    if [[ "$(cat $output_dir/psscan/infected-psscan.txt | grep $parent | wc -l)" = "1" ]] ; then
+      cat $output_dir/psscan/infected-psscan.txt | grep $child | tr -s ' ' | cut -d " " -f 4 > child-ppids.tmp
+      parent_pid="$(cat $output_dir/psscan/infected-psscan.txt | grep $parent | tr -s ' ' | cut -d ' ' -f 3)"
+      while read ppid; do
+        ppid=$( printf $ppid )
+        parent_pid=$( printf $parent_pid )
+        if [[ $ppid != $parent_pid ]] ; then
+          echo -e "\n\nUnexpected parent process for$child ($ppid instead of $parent_pid)" >> $output_dir/process-checks.tmp
+        fi
+      done < child-ppids.tmp
+      rm child-ppids.tmp
+    fi
+  done
+
+  # Verify processes are running in expected sessions
+  for process in " wininit.exe" " services.exe" " lsass.exe" " svchost.exe" " lsm.exe" " winlogon.exe"; do        
+    if [[ $process = " csrss.exe" ]] || [[ $process = " wininit.exe" ]] || [[ $process = " services.exe" ]] || [[ $process = " lsass.exe" ]] || [[ $process = " svchost.exe" ]]|| [[ $process = " lsm.exe" ]]; then session="0"; fi
+    if [[ $process = " winlogon.exe" ]]; then session="1"; fi
+    cat $output_dir/pslist/infected-pslist.txt | grep $process | tr -s ' ' | cut -d ' ' -f 7 > process_sessions.temp
+    while read psession; do
+      if [[ $psession != $session ]] ; then
+        echo -e "\n\nProcess$process running in unexpected session ($psession instead of $session)\n" >> $output_dir/process-checks.tmp
+        sed -n '2p' $output_dir/pslist/infected-pslist.txt >> $output_dir/process-checks.tmp
+        sed -n '3p' $output_dir/pslist/infected-pslist.txt >> $output_dir/process-checks.tmp
+        cat $output_dir/pslist/infected-pslist.txt | grep $process >> $output_dir/process-checks.tmp  
+      fi
+    done < process_sessions.temp
+    rm process_sessions.temp
+  done
+
+  # Verify if any processes have suspicious l33t names
+  cat $output_dir/psscan/infected-psscan.txt | grep -E -i "snss|cssrs|csrsss|lass|lssass|lsasss|scvh|svch0st|svchst|lsn|g0n|l0g" > suspicious_process.tmp
+  if [[ -s suspicious_process.tmp ]]; then
+    echo -e "\n\nProcesses with suspicious names:\n" >> $output_dir/process-checks.tmp
+    sed -n '2p' $output_dir/psscan/infected-psscan.txt >> $output_dir/process-checks.tmp
+    sed -n '3p' $output_dir/psscan/infected-psscan.txt >> $output_dir/process-checks.tmp
+    cat suspicious_process.tmp >> $output_dir/process-checks.tmp
+  fi
+  rm suspicious_process.tmp
+
+  # Check process executable path
+  for process in "smss.exe" "crss.exe" "wininit.exe" "services.exe" "lsass.exe" "svchost.exe" "lsm.exe" "explorer.exe"; do
+    if [[ $process == "smss.exe" ]]; then processpath="\windows\system32\smss.exe" ; fi
+    if [[ $process == "crss.exe" ]]; then processpath="\windows\system32\csrss.exe" ; fi
+    if [[ $process == "wininit.exe" ]]; then processpath="\windows\system32\wininit.exe" ; fi
+    if [[ $process == "services.exe" ]]; then processpath="\windows\system32\services.exe" ; fi
+    if [[ $process == "lsass.exe" ]]; then processpath="\windows\system32\lsass.exe" ; fi
+    if [[ $process == "svchost.exe" ]]; then processpath="\windows\system32\svchost.exe" ; fi
+    if [[ $process == "lsm.exe" ]]; then processpath="\windows\system32\lsm.exe" ; fi
+    if [[ $process == "explorer.exe" ]]; then processpath="\windows\explorer.exe" ; fi
+    cat $output_dir/dlllist/infected-dlllist.txt | grep -i -A 1 $process | grep "Command line" | grep -o '\\.*' | cut -d ' ' -f 1 | tr '[:upper:]' '[:lower:]' | sed 's,\\,\\\\,g' > path_list.temp
+    if [[ -s path_list.temp ]]; then
+      while read path; do
+        if [[ "$path" != "$processpath" ]]; then 
+          echo -e "\n\nProcess $process is running from $path instead of $processpath" >> $output_dir/process-checks.tmp
+        fi
+      done < path_list.temp
+      rm path_list.temp
+    fi
+  done
+  # Store findings in final report
+  if [[ -s $output_dir/process-checks.tmp ]]; then
+    echo -e "\nProcess checks based on Volatility plugin output for the infected memory image:" >> $output_dir/$report
+    echo -e "================================================================================" >> $output_dir/$report
+    cat $output_dir/process-checks.tmp >> $output_dir/$report
+  fi
+  rm $output_dir/process-checks.tmp
+fi
+
 echo -e "\nEnd of report." >> $output_dir/$report
 
 endtime=$(date +%s)
