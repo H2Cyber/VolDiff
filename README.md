@@ -291,4 +291,4 @@ Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
 
 Feedback and bugs
 -------------------
-Please submit feedback, report bugs or ideas to houcem.hachicha[@]gmail.com.
+Please submit feedback, report bugs, or send ideas that you want to see implemented to houcem.hachicha[@]gmail.com.
