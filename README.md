@@ -192,12 +192,8 @@ callbacks
 
 </pre>
 
-Options
---------
-Use --help to view all the available options: <pre> ./VolDiff --help </pre>
-
-Recomended options:
-
+Recomended Options
+-------------------
  --process-checks : check process parent/child relationships, execution path, unusual loaded DLLs etc.
  
  --registry-checks : spots changes in registry keys that are commonly used by malware for persistence.
@@ -205,6 +201,8 @@ Recomended options:
  --string-checks : searches for suspicious strings in memory (emails, IPs, domains etc).
 
 The options above are experimental (may generate false positives), and may slow down VolDiff execution.
+
+Use --help to view all the available options: <pre> ./VolDiff --help </pre>
 
 Licence
 --------
