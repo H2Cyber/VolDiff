@@ -194,15 +194,24 @@ callbacks
 
 Recomended Options
 -------------------
- --process-checks : check process parent/child relationships, execution path, unusual loaded DLLs etc.
+A number of options is available in VolDiff and can be used as follows:
+
+<pre>
+./VolDiff.sh path/to/baseline.vmem path/to/infected.vmem profile [Options]
+</pre>
+
+The recommanded options to use with VolDiff are:
+
+ `--process-checks` : check process parent/child relationships, execution path, unusual loaded DLLs etc.
  
- --registry-checks : spot changes in registry keys that are commonly used by malware for persistence.
+ `--registry-checks` : spot changes in registry keys that are commonly used by malware for persistence.
  
- --string-checks : search for suspicious strings in memory (IPs, domains, emails etc).
+ `--string-checks` : search for suspicious strings in memory (IPs, domains, emails etc).
 
 The options above are experimental (may generate false positives), and may slow down VolDiff execution.
 
-Use --help to view all the available options: <pre> ./VolDiff --help </pre>
+Use `--help` to view all the available options: 
+<pre> ./VolDiff.sh --help </pre>
 
 Licence
 --------
