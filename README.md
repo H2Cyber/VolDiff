@@ -208,7 +208,7 @@ The recommanded options to use with VolDiff are:
  
  `--string-checks` : search for suspicious strings in memory (IPs, domains, emails etc).
 
-The options above are experimental (may generate false positives), and may slow down VolDiff execution.
+The options above are experimental (may generate false positives), and will slow down VolDiff execution.
 
 Use `--help` to view all the available options: 
 <pre> ./VolDiff.sh --help </pre>
