@@ -196,9 +196,9 @@ Recomended Options
 -------------------
  --process-checks : check process parent/child relationships, execution path, unusual loaded DLLs etc.
  
- --registry-checks : spots changes in registry keys that are commonly used by malware for persistence.
+ --registry-checks : spot changes in registry keys that are commonly used by malware for persistence.
  
- --string-checks : searches for suspicious strings in memory (emails, IPs, domains etc).
+ --string-checks : search for suspicious strings in memory (IPs, domains, emails etc).
 
 The options above are experimental (may generate false positives), and may slow down VolDiff execution.
 
