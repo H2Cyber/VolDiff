@@ -219,6 +219,6 @@ Free open source software.
 
 Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
 
-Feedback and bugs
+Feedback and Bugs
 -------------------
 Please submit feedback, report bugs, or send ideas that you want to see implemented to houcem.hachicha[@]gmail.com.
