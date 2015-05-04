@@ -4,7 +4,7 @@ VolDiff: Malware Memory Footprint Analysis
 
 VolDiff is a bash script that runs Volatility plugins against memory images captured before and after malware execution. It creates a report that highlights system changes based on memory (RAM) analysis.
 
-VolDiff is a simple yet powerfull malware analysis tool that enables malware analysts to quickly identify IOCs and understand advanced malware behaviour.
+VolDiff is a simple yet powerful malware analysis tool that enables malware analysts to quickly identify IOCs and understand advanced malware behavior.
 
 Use Directions
 ----------------
@@ -200,7 +200,7 @@ A number of options is available in VolDiff and can be used as follows:
 ./VolDiff.sh path/to/baseline.vmem path/to/infected.vmem profile [Options]
 </pre>
 
-The recommanded options to use with VolDiff are:
+The recommended options to use with VolDiff are:
 
  `--process-checks` : check process parent/child relationships, execution path, unusual loaded DLLs etc.
  
