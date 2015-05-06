@@ -2,7 +2,7 @@
 # VolDiff malware analysis script.
 # Written by Houcem Hachicha aka @aim4r.
 
-version="0.9.5"
+version="0.9.6"
 
 ################################ PRINT VOLDIFF BANNER ################################
 echo -e " _    __      ______  _ ________"
@@ -88,10 +88,6 @@ else
   echo -e "Profile: $profile..."
 fi
 
-if [[ $@ =~ "--autoruns" ]] ; then
-  echo -e "Adding autoruns to the list of plugins to run..."
-fi
-
 ################################ CREATING FOLDER TO STRORE OUTPUT ################################
 starttime=$(date +%s)
 output_dir=VolDiff_$(date +%F_%R)
@@ -105,11 +101,6 @@ declare -a plugins_to_run=("timeliner" "handles" "psxview" "netscan" "getsids" "
 # volatility plugins to report on (order matters!):
 declare -a plugins_to_report=("netscan" "pslist" "psscan" "psxview" "malfind" "timeliner" "svcscan" "cmdline" "consoles" "deskscan" "drivermodule" "driverscan" "driverirp" "modscan"  "devicetree" "callbacks" "idt" "orphanthreads" "mutantscan" "getsids" "privs" "timers" "gditimers" "ssdt")
 
-# use autoruns plugin if requested:
-if [[ $@ =~ "--autoruns" ]] ; then
-  plugins_to_run+=("autoruns")
-  plugins_to_report+=("autoruns")
-fi
 
 ################################ RUNING VOLATILITY PLUGINS ################################
 echo -e "Running a selection of volatility plugins (time consuming)..."
@@ -127,8 +118,8 @@ do
     wait
   # running timeliner in background (time consuming):
   elif [[ $plugin = "timeliner" ]] ; then
-    vol.py --profile=$profile -f $baseline_memory_image $plugin &> $output_dir/$plugin/baseline-$plugin.txt &
-    vol.py --profile=$profile -f $infected_memory_image $plugin &> $output_dir/$plugin/infected-$plugin.txt &
+    vol.py --profile=$profile -f $baseline_memory_image $plugin --type=Process,Socket,Shimcache &> $output_dir/$plugin/baseline-$plugin.txt &
+    vol.py --profile=$profile -f $infected_memory_image $plugin --type=Process,Socket,Shimcache &> $output_dir/$plugin/infected-$plugin.txt &
   elif [[ $plugin = "malfind" ]] ; then
     mkdir $output_dir/$plugin/dump-dir-baseline
     mkdir $output_dir/$plugin/dump-dir-infected
@@ -149,6 +140,15 @@ for plugin in "${plugins_to_run[@]}"
 do
   diff $output_dir/$plugin/baseline-$plugin.txt $output_dir/$plugin/infected-$plugin.txt | grep -E "^>" | sed 's/^..//' &> $output_dir/$plugin/diff-$plugin.txt
 done
+
+################################ DUMPING NEW PROCESSES TO DISK ################################
+echo -e "Dumping new processes to disk..."
+cat $output_dir/psscan/diff-psscan.txt | tr -s ' ' | cut -d " " -f 3 | sort | uniq >  $output_dir/tmpfolder/new-procpids.tmp
+mkdir $output_dir/procdump
+while read newpid ; do
+  vol.py --profile=$profile -f $infected_memory_image procdump -D $output_dir/procdump/ -p $newpid &> /dev/null
+done < $output_dir/tmpfolder/new-procpids.tmp
+wait
 
 ################################ PROCESS CHECKS ################################
 if [[ $@ =~ "--process-checks" ]] ; then
@@ -220,6 +220,24 @@ if [[ $@ =~ "--process-checks" ]] ; then
       done < $output_dir/tmpfolder/child-ppids.tmp
     fi
   done
+
+  # verify that every process has a parent (except for explorer.exe, csrss.exe, wininit.exe and winlogon.exe)
+  mkdir $output_dir/tmpfolder/ppids
+  tail -n +4 $output_dir/psscan/infected-psscan.txt | tr -s ' ' | cut -d ' ' -f 4 | sort | uniq | grep -v "^0$" > $output_dir/tmpfolder/ppids/ppids.temp
+  tail -n +4 $output_dir/psscan/infected-psscan.txt | tr -s ' ' | cut -d ' ' -f 3 | sort | uniq > $output_dir/tmpfolder/ppids/pids.temp
+  while read ppid; do 
+    if ! grep -E "^$ppid$" $output_dir/tmpfolder/ppids/pids.temp > /dev/null ; then
+      tail -n +4 $output_dir/psscan/infected-psscan.txt | tr -s ' ' | cut -d ' ' -f 2,3,4 | grep -E " $ppid$" | cut -d ' ' -f 1 | sort | uniq > $output_dir/tmpfolder/ppids/processes-$ppid.temp
+      cat $output_dir/tmpfolder/ppids/processes-$ppid.temp | tr '\n' ' ' > $output_dir/tmpfolder/ppids/processes-$ppid-space.temp
+      if  ! grep -E -i "explorer.exe|csrss.exe|wininit.exe|winlogon.exe" $output_dir/tmpfolder/ppids/processes-$ppid-space.temp > /dev/null ; then 
+        echo -e "\nPPID $ppid does not have an associated process:" >> $output_dir/tmpfolder/process-checks.tmp
+        sed -n '2p' $output_dir/psscan/infected-psscan.txt >> $output_dir/tmpfolder/process-checks.tmp
+        sed -n '3p' $output_dir/psscan/infected-psscan.txt >> $output_dir/tmpfolder/process-checks.tmp
+        cat $output_dir/psscan/infected-psscan.txt | grep " $ppid " >> $output_dir/tmpfolder/process-checks.tmp
+      fi 
+    fi
+  done < $output_dir/tmpfolder/ppids/ppids.temp
+
   # verify processes are running in expected sessions:
   for process in " wininit.exe" " services.exe" " lsass.exe" " svchost.exe" " lsm.exe" " winlogon.exe"; do
     if [[ $process = " csrss.exe" ]] || [[ $process = " wininit.exe" ]] || [[ $process = " services.exe" ]] || [[ $process = " lsass.exe" ]] || [[ $process = " svchost.exe" ]]|| [[ $process = " lsm.exe" ]]; then session="0"; fi
@@ -320,13 +338,13 @@ if [[ $@ =~ "--process-checks" ]] ; then
   plugin="dlllist"
   cat $output_dir/$plugin/diff-$plugin.txt | grep "Command line" | grep -E -v -i "system32|explorer.exe|iexplore.exe" | sed -e 's/Command line : //' | sort | uniq > $output_dir/tmpfolder/execs.tmp
   if [[ -s $output_dir/tmpfolder/execs.tmp ]] ; then
-    echo -e "\nSuspicious new executables from dlllist" >> $output_dir/tmpfolder/process-checks.tmp
+    echo -e "\nSuspicious new executables from dlllist:" >> $output_dir/tmpfolder/process-checks.tmp
     cat $output_dir/tmpfolder/execs.tmp >> $output_dir/tmpfolder/process-checks.tmp
   fi
 
   cat $output_dir/$plugin/diff-$plugin.txt | grep -o -E "C:.*.dll" | grep -v -i "System32" | uniq | sort > $output_dir/tmpfolder/dlls.tmp
   if [[ -s $output_dir/tmpfolder/dlls.tmp ]] ; then
-    echo -e "\nSuspicious new DLLs" >> $output_dir/tmpfolder/process-checks.tmp
+    echo -e "\nSuspicious new DLLs:" >> $output_dir/tmpfolder/process-checks.tmp
     cat $output_dir/tmpfolder/dlls.tmp >> $output_dir/tmpfolder/process-checks.tmp
   fi
 
@@ -394,35 +412,41 @@ fi
 ################################ STRING CHECKS ################################
 if [[ $@ =~ "--string-checks" ]] ; then
   echo -e "Hunting for badness in memory strings..."
-  hacker_string_regex="'sysinternal|psexec|WCEServicePipe|mimikatz|credentials.txt|wce_krbtkts'"
-  #running strings
-  plugin="strings"
-  mkdir $output_dir/$plugin
-  strings -a -td $baseline_memory_image > $output_dir/$plugin/baseline-$plugin.txt
-  strings -a -td $infected_memory_image > $output_dir/$plugin/infected-$plugin.txt
-  diff $output_dir/$plugin/baseline-$plugin.txt $output_dir/$plugin/infected-$plugin.txt | grep -E "^>" | sed 's/^..//' &> $output_dir/$plugin/diff-$plugin.txt
-  vol.py --profile=$profile -f $infected_memory_image $plugin --string-file=$output_dir/$plugin/diff-$plugin.txt &> $output_dir/$plugin/diff-$plugin-vol.txt
-  #finding new emails, domains and IPs
-  cat $output_dir/strings/diff-strings-vol.txt | perl -e 'while(<>){if(/(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/){print $_;}}' &>> $output_dir/strings/diff-ips-domains-vol.txt
-  cat $output_dir/strings/diff-strings-vol.txt | perl -e 'while(<>){ if(/(http|https|ftp|mail)\:[\/\w.]+/){print $_;}}' &>> $output_dir/strings/diff-ips-domains-vol.txt
-  cat $output_dir/strings/diff-strings-vol.txt | grep -E -o "\b[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+\b" &>> $output_dir/strings/diff-ips-domains-vol.txt
-  #finding suspicious executable names in new strings
   touch $output_dir/tmpfolder/string_checks.tmp
-  touch $output_dir/tmpfolder/susp_string.tmp
-  cat $output_dir/strings/diff-strings-vol.txt | grep -i -E $hacker_string_regex > $output_dir/tmpfolder/susp_string.tmp
-  if [[ -s $output_dir/tmpfolder/susp_string.tmp ]] ; then
-    cat $output_dir/tmpfolder/susp_string.tmp >> $output_dir/tmpfolder/string_checks.tmp
-  fi
-  #finding ips/domainsemails in dumped malfind processes
-  plugin="malfind"
-  strings -a -td $output_dir/malfind/dump-dir-infected/* > $output_dir/tmpfolder/malfind-strings.tmp
-  cat $output_dir/tmpfolder/malfind-strings.tmp | grep -o -E '\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]' | uniq >> $output_dir/tmpfolder/infected-ip-domains.tmp
-  cat $output_dir/tmpfolder/malfind-strings.tmp | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | uniq >> $output_dir/tmpfolder/infected-ip-domains.tmp
-  cat $output_dir/tmpfolder/malfind-strings.tmp | grep -E -o "\b[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+\b" | uniq >> $output_dir/tmpfolder/infected-ip-domains.tmp
+  string_pattern[Hacker]="'sysinternal|psexec|WCEServicePipe|mimikatz|wce_krbtkts|veil|backdoor'"
+  string_pattern[Web]="'POST|User Agent'"
+  string_pattern[Shell]="'shell32.dl|ShellExecuteA'"
+  string_pattern[Password]="'password|passwd|pwd|credential|creds'"
+  string_pattern[Metasploit]="'getsystem|stdapi'"
+  string_pattern[Virtualisation]="'vmware|qemu|virtualbox|xen|citrix|parallels|proxmox'"
+  string_pattern[Keylogger]="'backspace|enter|klog|klogger|keylog'" 
+  string_pattern[Powershell]="'powerview|powershell|.ps'"
+  string_pattern[Sandbox]="'Wireshark|Noriben|CaptureBat|Malwr|Cuckoo|Anubis|PROCMON|FireEye|Snort'"
+  string_pattern[Antivirus]="'Firewall|Trojan|AVAST|Kaspersky|ANTIVIR|AVCONSOL|Avgctrl.exe|F-Secure|Norman|SAFEWEB|WEBSCANX|ANTIVIR|MCAFEE|NORTON|NVC95|AVCONSOL'"
+
+  #run volatility strings plugin
+  mkdir $output_dir/strings
+  strings -a -td $output_dir/malfind/dump-dir-infected/* > $output_dir/tmpfolder/process-strings.tmp
+  strings -a -td $output_dir/procdump/* >> $output_dir/tmpfolder/process-strings.tmp
+  vol.py --profile=$profile -f $infected_memory_image strings --string-file=$output_dir/tmpfolder/process-strings.tmp &> $output_dir/strings/process-strings-vol.txt
+
+  #find ips/domains/emails in strings
+  cat $output_dir/strings/process-strings-vol.txt | grep -o -E '\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]' | uniq >> $output_dir/tmpfolder/infected-ip-domains.tmp
+  cat $output_dir/strings/process-strings-vol.txt | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | uniq >> $output_dir/tmpfolder/infected-ip-domains.tmp
+  cat $output_dir/strings/process-strings-vol.txt | grep -E -o "\b[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+\b" | uniq >> $output_dir/tmpfolder/infected-ip-domains.tmp
   if [[ -s $output_dir/tmpfolder/infected-ip-domains.tmp ]] ; then
+    echo -e "IPs, domains and email addresses found in memory strings:" >> $output_dir/tmpfolder/string_checks.tmp
     cat $output_dir/tmpfolder/infected-ip-domains.tmp >> $output_dir/tmpfolder/string_checks.tmp
   fi
-  rm $output_dir/strings/baseline-strings.txt $output_dir/strings/infected-strings.txt $output_dir/strings/diff-strings.txt &> /dev/null
+  
+  #find other suspicious strings 
+  for pattern in "Hacker" "Web" "Shell" "Password" "Metasploit" "Virtualisation" "Keylogger" "Powershell" "Sandbox" "Antivirus" ; do
+    if grep -E -i ${string_pattern[$pattern]} $output_dir/strings/process-strings-vol.txt > /dev/null ; then
+      echo -e "\n$pattern related strings found in memory:" >> $output_dir/tmpfolder/string_checks.tmp
+      grep -E -i ${string_pattern[$pattern]} $output_dir/strings/process-strings-vol.txt >> $output_dir/tmpfolder/string_checks.tmp
+    fi
+  done
+
 fi
 
 ################################ REPORT CREATION ################################
@@ -451,7 +475,7 @@ do
     if [[ $plugin = "psxview" ]] ; then
       cat $output_dir/psxview/diff-psxview.txt | grep "[0-9] False" > $output_dir/tmpfolder/hidden.tmp
       if [[ -s $output_dir/tmpfolder/hidden.tmp ]] ; then
-        echo -e "\n\nSuspicious new $plugin entries" >> $output_dir/$report
+        echo -e "\n\nNew $plugin entries" >> $output_dir/$report
         echo -e "===========================================================================\n" >> $output_dir/$report
         sed -n '2p' $output_dir/psxview/infected-psxview.txt >> $output_dir/$report
         sed -n '3p' $output_dir/psxview/infected-psxview.txt >> $output_dir/$report
@@ -464,7 +488,7 @@ do
       fi
     # processing pslist and psscan output:
     elif [[ $plugin = "pslist"  ]] || [[ $plugin = "psscan"  ]] ; then
-     echo -e "\n\nSuspicious new $plugin entries" >> $output_dir/$report
+     echo -e "\n\nNew $plugin entries" >> $output_dir/$report
      echo -e "===========================================================================\n" >> $output_dir/$report
      sed -n '2p' $output_dir/$plugin/infected-$plugin.txt >> $output_dir/$report
      sed -n '3p' $output_dir/$plugin/infected-$plugin.txt >> $output_dir/$report
@@ -476,7 +500,7 @@ do
      done < $output_dir/tmpfolder/unique-new-pids.tmp
     #processing netscan output
     elif [[ $plugin = "netscan"  ]] ; then
-      echo -e "\n\nSuspicious new $plugin entries" >> $output_dir/$report
+      echo -e "\n\nNew $plugin entries" >> $output_dir/$report
       echo -e "===========================================================================\n" >> $output_dir/$report
       sed -n '2p' $output_dir/$plugin/infected-$plugin.txt >> $output_dir/$report
       cat $output_dir/$plugin/diff-$plugin.txt >> $output_dir/$report
@@ -484,7 +508,7 @@ do
     elif [[ $plugin = "deskscan"  ]] ; then
       cat $output_dir/$plugin/diff-$plugin.txt | grep "Desktop:" >> $output_dir/tmpfolder/$plugin.tmp
       if [[ -s $output_dir/tmpfolder/$plugin.tmp ]] ; then
-        echo -e "\n\nSuspicious new $plugin entries" >> $output_dir/$report
+        echo -e "\n\nNew $plugin entries" >> $output_dir/$report
         echo -e "===========================================================================\n" >> $output_dir/$report
         cat $output_dir/tmpfolder/$plugin.tmp >> $output_dir/$report
         if [[ $@ =~ "--add-hints" ]] ; then
@@ -493,23 +517,20 @@ do
       else
         echo -e "$plugin" >> $output_dir/tmpfolder/no_new_entries.tmp 
       fi
-    # filtering timeliner results:
+    # sorting timeliner results:
     elif [[ $plugin = "timeliner" ]] ; then
-     cat $output_dir/$plugin/diff-$plugin.txt | grep "PROCESS" >> $output_dir/tmpfolder/$plugin.tmp
-     cat $output_dir/$plugin/diff-$plugin.txt | grep "NETWORK CONNECT" >> $output_dir/tmpfolder/$plugin.tmp
-     cat $output_dir/$plugin/diff-$plugin.txt | grep "PE HEADER (module)" >> $output_dir/tmpfolder/$plugin.tmp
-     cat $output_dir/$plugin/diff-$plugin.txt | grep "PE HEADER (exe)" >> $output_dir/tmpfolder/$plugin.tmp
-     echo -e "\n\nSuspicious new $plugin entries" >> $output_dir/$report
+     cat $output_dir/$plugin/diff-$plugin.txt | sort | uniq  >> $output_dir/tmpfolder/$plugin.tmp
+     echo -e "\n\nNew $plugin entries" >> $output_dir/$report
      echo -e "===========================================================================\n" >> $output_dir/$report
-     cat $output_dir/tmpfolder/$plugin.tmp | sort >> $output_dir/$report
+     cat $output_dir/tmpfolder/$plugin.tmp >> $output_dir/$report
     # processing plugins that don't need output formatting:
-    elif [[ $plugin = "devicetree" ]] || [[ $plugin = "orphanthreads" ]] || [[ $plugin = "cmdline" ]] || [[ $plugin = "consoles" ]] || [[ $plugin = "svcscan" ]] || [[ $plugin = "driverirp" ]] || [[ $plugin = "malfind" ]] || [[ $plugin = "getsids" ]] || [[ $plugin = "autoruns" ]] ; then
-      echo -e "\n\nSuspicious new $plugin entries" >> $output_dir/$report
+    elif [[ $plugin = "devicetree" ]] || [[ $plugin = "orphanthreads" ]] || [[ $plugin = "cmdline" ]] || [[ $plugin = "consoles" ]] || [[ $plugin = "svcscan" ]] || [[ $plugin = "driverirp" ]] || [[ $plugin = "malfind" ]] || [[ $plugin = "getsids" ]] ; then
+      echo -e "\n\nNew $plugin entries" >> $output_dir/$report
       echo -e "===========================================================================\n" >> $output_dir/$report
       cat $output_dir/$plugin/diff-$plugin.txt >> $output_dir/$report
     # processing other plugins:
     else
-      echo -e "\n\nSuspicious new $plugin entries" >> $output_dir/$report
+      echo -e "\n\nNew $plugin entries" >> $output_dir/$report
       echo -e "===========================================================================\n" >> $output_dir/$report
       sed -n '2p' $output_dir/$plugin/infected-$plugin.txt >> $output_dir/$report
       sed -n '3p' $output_dir/$plugin/infected-$plugin.txt >> $output_dir/$report
@@ -586,7 +607,7 @@ fi
 # add identified suspicious strings to the report:
 if [[ $@ =~ "--string-checks" ]] ; then
   if [[ -s $output_dir/tmpfolder/string_checks.tmp ]]; then
-    echo -e "\n\nSuspicious new strings found in memory" >> $output_dir/$report
+    echo -e "\n\nSuspicious strings found in memory" >> $output_dir/$report
     echo -e "===========================================================================\n" >> $output_dir/$report
     cat $output_dir/tmpfolder/string_checks.tmp >> $output_dir/$report
   fi
