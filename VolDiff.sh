@@ -2,7 +2,7 @@
 # VolDiff malware analysis script.
 # Written by Houcem Hachicha aka @aim4r.
 
-version="0.9.7"
+version="0.9.8"
 
 ################################ PRINT VOLDIFF BANNER ################################
 echo -e " _    __      ______  _ ________"
@@ -406,6 +406,8 @@ fi
 if [[ $@ =~ "--registry-checks" ]] ; then
   echo -e "Searching for changes in registry keys..."
   touch $output_dir/tmpfolder/registry_checks.tmp
+
+  # finding changes in registry keys commonly used for persistence
   plugin="printkey"
   for key in "Microsoft\Windows\CurrentVersion\RunOnce" "Microsoft\Windows\CurrentVersion\Run" "Microsoft\Windows\CurrentVersion\RunServices" "Microsoft\Windows\CurrentVersion\RunServicesOnce" "Software\Microsoft\Windows NT\CurrentVersion\Winlogon" "Microsoft\Security Center\Svc" ; do
     vol.py --profile=$profile -f $baseline_memory_image $plugin -K $key &> $output_dir/tmpfolder/base.tmp &
@@ -419,6 +421,52 @@ if [[ $@ =~ "--registry-checks" ]] ; then
       tail -n +2 $output_dir/tmpfolder/infected.tmp >> $output_dir/tmpfolder/registry_checks.tmp
     fi
   done
+
+  # dumping and analysing registry for anomalies
+  plugin="dumpregistry"
+  mkdir $output_dir/$plugin
+  mkdir $output_dir/tmpfolder/baselineregistry
+  mkdir $output_dir/$plugin/infectedregistry
+  # dumping registry files 
+  vol.py --profile=$profile -f $baseline_memory_image $plugin -D $output_dir/tmpfolder/baselineregistry &> /dev/null &
+  vol.py --profile=$profile -f $infected_memory_image $plugin -D $output_dir/$plugin/infectedregistry &> /dev/null &
+  wait
+  # running strings
+  strings -a -td $output_dir/tmpfolder/baselineregistry/* | sort | uniq > $output_dir/tmpfolder/baseline-registry-strings.txt
+  strings -a -td $output_dir/$plugin/infectedregistry/* | sort | uniq > $output_dir/tmpfolder/infected-registry-strings.txt
+  # diffing strings
+  diff $output_dir/tmpfolder/baseline-registry-strings.txt $output_dir/tmpfolder/infected-registry-strings.txt | grep -E "^>" | sed 's/^..//' &> $output_dir/$plugin/diff-registry-strings.txt
+  #find ips/domains/emails in new registry strings
+  cat $output_dir/$plugin/diff-registry-strings.txt | grep -o -E '\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]' | uniq >> $output_dir/tmpfolder/diff-reg-ip-domains.tmp
+  cat $output_dir/$plugin/diff-registry-strings.txt | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | uniq >> $output_dir/tmpfolder/diff-reg-ip-domains.tmp
+  cat $output_dir/$plugin/diff-registry-strings.txt | grep -E -o "\b[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+\b" | uniq >> $output_dir/tmpfolder/diff-reg-ip-domains.tmp
+  if [[ -s $output_dir/tmpfolder/diff-reg-ip-domains.tmp ]] ; then
+    echo -e "IPs, domains and email addresses found in registry strings:" >> $output_dir/tmpfolder/registry_checks.tmp
+    cat $output_dir/tmpfolder/diff-reg-ip-domains.tmp | sort | uniq >> $output_dir/tmpfolder/registry_checks.tmp
+  fi
+  #find other suspicious strings in registry
+  for pattern in Web Antivirus Virtualisation Sandbox Sysinternals Shell Keylogger Password Powershell Infogathering Tool Banking Socialsites Misc ; do
+    if [[ $pattern == "Web" ]] ; then regex_str="'agent|cookie|download|mozilla|post|proxy|responsetext|socket|useragent|user-agent|urlmon|user_agent|winhttp|http'" ; fi
+    if [[ $pattern == "Antivirus" ]] ; then regex_str="'antivir|avast|avcons|avgctrl|bitdefender|F-Secure|firewall|kaspersky|mcafee|norton|norman|safeweb'" ; fi
+    if [[ $pattern == "Virtualisation" ]] ; then regex_str="'citrix|parallels|proxmox|qemu|virtualbox|vmware|xen'" ; fi
+    if [[ $pattern == "Sandbox" ]] ; then regex_str="'anubis|capturebat|cuckoo|debug|fiddler|fireeye|noriben|sandb|snort|tcpdump|wireshark'" ; fi
+    if [[ $pattern == "Sysinternals" ]] ; then regex_str="'filemon|sysinternal|procmon|regmon|sysmon'" ; fi
+    if [[ $pattern == "Shell" ]] ; then regex_str="'shellexecute|shell32'" ; fi
+    if [[ $pattern == "Keylogger" ]] ; then regex_str="'backspace|klog|keylog|shift'" ; fi
+    if [[ $pattern == "Password" ]] ; then regex_str="'brute|credential|creds|mimikatz|passwd|password|pwd|sniff|stdapi|WCEServicePipe|wce_krbtkts'" ; fi
+    if [[ $pattern == "Powershell" ]] ; then regex_str="'powerview|powershell'" ; fi
+    if [[ $pattern == "Infogathering" ]] ; then regex_str="'getcurrent|getproc|gethost|process'" ; fi
+    if [[ $pattern == "Tool" ]] ; then regex_str="'cmd.exe|metasploit|msf|netsh|psexec|ping|wmic'" ; fi
+    if [[ $pattern == "Banking" ]] ; then regex_str="'banc|banco|bank|Barclays|hsbc|jpmorgan|lloyds|natwest|paypal|santander'" ; fi
+    if [[ $pattern == "Socialsites" ]] ; then regex_str="'facebook|google|instagram|login|linkedin|twitter|yahoo|youtube'" ; fi
+    if [[ $pattern == "Misc" ]] ; then regex_str="'backdoor|botnet|malware|registry|rootkit|Trojan|veil|policy|\\.exe|\\.dll'" ; fi
+
+    if grep -E -i $regex_str $output_dir/$plugin/diff-registry-strings.txt > /dev/null ; then
+      echo -e "\n$pattern strings found in registry:" >> $output_dir/tmpfolder/registry_checks.tmp
+      grep -E -i $regex_str $output_dir/$plugin/diff-registry-strings.txt | sort | uniq >> $output_dir/tmpfolder/registry_checks.tmp
+    fi
+  done
+
 fi
 
 ################################ STRING CHECKS ################################
@@ -428,8 +476,8 @@ if [[ $@ =~ "--string-checks" ]] ; then
 
   #run volatility strings plugin
   mkdir $output_dir/strings
-  strings -a -td $output_dir/malfind/dump-dir-infected/* > $output_dir/tmpfolder/process-strings.tmp
-  strings -a -td $output_dir/procdump/* >> $output_dir/tmpfolder/process-strings.tmp
+  strings -a -td $output_dir/malfind/dump-dir-infected/* > $output_dir/tmpfolder/process-strings.tmp 2> /dev/null
+  strings -a -td $output_dir/procdump/* >> $output_dir/tmpfolder/process-strings.tmp 2> /dev/null
   vol.py --profile=$profile -f $infected_memory_image strings --string-file=$output_dir/tmpfolder/process-strings.tmp &> $output_dir/strings/process-strings-vol.txt
 
   #find ips/domains/emails in strings
@@ -438,28 +486,29 @@ if [[ $@ =~ "--string-checks" ]] ; then
   cat $output_dir/strings/process-strings-vol.txt | grep -E -o "\b[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+\b" | uniq >> $output_dir/tmpfolder/infected-ip-domains.tmp
   if [[ -s $output_dir/tmpfolder/infected-ip-domains.tmp ]] ; then
     echo -e "IPs, domains and email addresses found in memory strings:" >> $output_dir/tmpfolder/string_checks.tmp
-    cat $output_dir/tmpfolder/infected-ip-domains.tmp >> $output_dir/tmpfolder/string_checks.tmp
+    cat $output_dir/tmpfolder/infected-ip-domains.tmp | sort | uniq >> $output_dir/tmpfolder/string_checks.tmp
   fi
   
   #find other suspicious strings 
-  for pattern in Hacker Web Shell Password Metasploit Malware Virtualisation Keylogger Powershell Sandbox Antivirus Banking Social ; do
-    if [[ $pattern == "Hacker" ]] ; then regex_str="'sysinternal|psexec|WCEServicePipe|mimikatz|wce_krbtkts|veil|backdoor'" ; fi
-    if [[ $pattern == "Web" ]] ; then regex_str="'POST|Agent|useragent|user-agent|user_agent'" ; fi
-    if [[ $pattern == "Shell" ]] ; then regex_str="'shell32.dl|ShellExecuteA'" ; fi
-    if [[ $pattern == "Password" ]] ; then regex_str="'password|passwd|pwd|credential|creds'" ; fi
-    if [[ $pattern == "Malware" ]] ; then regex_str="'malware|botnet'" ; fi
-    if [[ $pattern == "Metasploit" ]] ; then regex_str="'getsystem|stdapi|msf'" ; fi
-    if [[ $pattern == "Virtualisation" ]] ; then regex_str="'vmware|qemu|virtualbox|xen|citrix|parallels|proxmox'" ; fi
-    if [[ $pattern == "Keylogger" ]] ; then regex_str="'backspace|shift|klog|klogger|keylog'"  ; fi
-    if [[ $pattern == "Powershell" ]] ; then regex_str="'powerview|powershell|.ps'" ; fi
-    if [[ $pattern == "Sandbox" ]] ; then regex_str="'Wireshark|Noriben|CaptureBat|Malwr|Cuckoo|Anubis|PROCMON|FireEye|Snort'" ; fi
-    if [[ $pattern == "Antivirus" ]] ; then regex_str="'Firewall|Trojan|AVAST|Kaspersky|ANTIVIR|AVCONSOL|Avgctrl.exe|F-Secure|Norman|SAFEWEB|WEBSCANX|ANTIVIR|MCAFEE|NORTON|NVC95|AVCONSOL'" ; fi
-    if [[ $pattern == "Banking" ]] ; then regex_str="'Lloyds|Barclays|Santander|natwest|banc|hsbc|jpmorgan|bank|banco'" ; fi
-    if [[ $pattern == "Social" ]] ; then regex_str="'login|google|facebook|twitter|yahoo|youtube|instagram|linkedin'" ; fi
+  for pattern in Web Antivirus Virtualisation Sandbox Sysinternals Shell Keylogger Password Powershell Infogathering Tool Banking Socialsites Misc ; do
+    if [[ $pattern == "Web" ]] ; then regex_str="'agent|cookie|download|mozilla|post|responsetext|socket|useragent|user-agent|urlmon|user_agent|winhttp|http'" ; fi
+    if [[ $pattern == "Antivirus" ]] ; then regex_str="'antivir|avast|avcons|avgctrl|bitdefender|F-Secure|firewall|kaspersky|mcafee|norton|norman|safeweb'" ; fi
+    if [[ $pattern == "Virtualisation" ]] ; then regex_str="'citrix|parallels|proxmox|qemu|virtualbox|vmware|xen'" ; fi
+    if [[ $pattern == "Sandbox" ]] ; then regex_str="'anubis|capturebat|cuckoo|debugger|fiddler|fireeye|noriben|sandbox|snort|tcpdump|wireshark'" ; fi
+    if [[ $pattern == "Sysinternals" ]] ; then regex_str="'filemon|sysinternal|procmon|regmon|sysmon'" ; fi
+    if [[ $pattern == "Shell" ]] ; then regex_str="'shellexecute|shell32'" ; fi
+    if [[ $pattern == "Keylogger" ]] ; then regex_str="'backspace|klog|keylog|shift'" ; fi
+    if [[ $pattern == "Password" ]] ; then regex_str="'brute|credential|creds|mimikatz|passwd|password|pwd|stdapi|WCEServicePipe|wce_krbtkts'" ; fi
+    if [[ $pattern == "Powershell" ]] ; then regex_str="'powerview|powershell'" ; fi
+    if [[ $pattern == "Infogathering" ]] ; then regex_str="'getcurrent|getproc|gethost|process'" ; fi
+    if [[ $pattern == "Tool" ]] ; then regex_str="'cmd.exe|metasploit|msf|netsh|psexec|ping.exe|wmic'" ; fi
+    if [[ $pattern == "Banking" ]] ; then regex_str="'banc|banco|bank|Barclays|hsbc|jpmorgan|lloyds|natwest|paypal|santander'" ; fi
+    if [[ $pattern == "Socialsites" ]] ; then regex_str="'facebook|google|instagram|login|linkedin|twitter|yahoo|youtube'" ; fi
+    if [[ $pattern == "Misc" ]] ; then regex_str="'backdoor|botnet|malware|rootkit|Trojan|veil|policy'" ; fi
 
     if grep -E -i $regex_str $output_dir/strings/process-strings-vol.txt > /dev/null ; then
-      echo -e "\n$pattern related strings found in memory:" >> $output_dir/tmpfolder/string_checks.tmp
-      grep -E -i $regex_str $output_dir/strings/process-strings-vol.txt >> $output_dir/tmpfolder/string_checks.tmp
+      echo -e "\n$pattern strings found in memory:" >> $output_dir/tmpfolder/string_checks.tmp
+      grep -E -i $regex_str $output_dir/strings/process-strings-vol.txt | sort | uniq >> $output_dir/tmpfolder/string_checks.tmp
     fi
   done
 
@@ -644,7 +693,7 @@ fi
 # add identified registry anamalies to the report:
 if [[ $@ =~ "--registry-checks" ]] ; then
   if [[ -s $output_dir/tmpfolder/registry_checks.tmp ]]; then
-    echo -e "\n\nChanges in registry keys commonly used for persistence" >> $output_dir/$report
+    echo -e "\n\nChanges in registry keys" >> $output_dir/$report
     echo -e "===========================================================================" >> $output_dir/$report
     cat $output_dir/tmpfolder/registry_checks.tmp >> $output_dir/$report
   fi
