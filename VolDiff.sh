@@ -1,8 +1,7 @@
 #!/bin/bash
-# VolDiff malware analysis script.
-# Written by Houcem Hachicha aka @aim4r.
+# VolDiff malware analysis script by @aim4r
 
-version="0.9.8"
+version="0.9.9"
 
 ################################ PRINT VOLDIFF BANNER ################################
 echo -e " _    __      ______  _ ________"
@@ -38,7 +37,7 @@ fi
 if [[ $@ =~ "--version" ]] ; then
   echo -e "This is free software: you are free to change and redistribute it."
   echo -e "There is NO WARRANTY, to the extent permitted by law."
-  echo -e "Written by Houcem Hachicha @aim4r. Report bugs to houcem.hachicha[@]gmail.com."
+  echo -e "Written by @aim4r. Report bugs to houcem.hachicha[@]gmail.com."
   exit
 fi
 
@@ -96,10 +95,10 @@ mkdir $output_dir/tmpfolder
 
 ################################ DECLARING LIST OF VOLATILITY PLUGINS TO PROCESS ################################
 # volatility plugins to run:
-declare -a plugins_to_run=("timeliner" "handles" "psxview" "netscan" "getsids" "pslist" "psscan" "atomscan" "cmdline" "consoles" "dlllist" "filescan" "svcscan" "mutantscan" "drivermodule" "driverscan" "devicetree" "modscan" "callbacks" "ldrmodules" "privs" "orphanthreads" "malfind" "idt" "driverirp" "deskscan" "timers" "gditimers" "ssdt")
+declare -a plugins_to_run=("timeliner" "handles" "psxview" "netscan" "iehistory" "getsids" "pslist" "psscan" "cmdline" "consoles" "dlllist" "filescan" "shimcache" "shelbags" "sessions" "messagehooks" "eventhooks" "svcscan" "envars" "mutantscan" "atoms" "atomscan" "drivermodule" "driverscan" "devicetree" "modules" "modscan" "unloadedmodules" "callbacks" "ldrmodules" "privs" "orphanthreads" "malfind" "idt" "driverirp" "deskscan" "timers" "gditimers" "ssdt")
 
 # volatility plugins to report on (order matters!):
-declare -a plugins_to_report=("netscan" "pslist" "psscan" "psxview" "malfind" "timeliner" "svcscan" "atomscan" "filescan" "cmdline" "consoles" "deskscan" "drivermodule" "driverscan" "driverirp" "modscan" "devicetree" "callbacks" "idt" "orphanthreads" "mutantscan" "getsids" "privs" "timers" "gditimers" "ssdt")
+declare -a plugins_to_report=("netscan" "iehistory" "pslist" "psscan" "psxview" "malfind" "sessions" "privs" "messagehooks" "eventhooks" "timeliner" "svcscan" "envars" "filescan" "shimcache" "shelbags" "cmdline" "consoles" "deskscan" "drivermodule" "driverscan" "driverirp" "modules" "modscan" "unloadedmodules" "devicetree" "callbacks" "idt" "orphanthreads" "atoms" "atomscan" "mutantscan" "getsids" "timers" "gditimers" "ssdt")
 
 
 ################################ RUNING VOLATILITY PLUGINS ################################
@@ -108,7 +107,7 @@ for plugin in "${plugins_to_run[@]}"
 do
   echo -e "Volatility plugin "$plugin" execution in progress..."
   mkdir $output_dir/$plugin
-  if [[ $plugin = "mutantscan" ]] || [[ $plugin = "handles" ]] || [[ $plugin = "privs" ]] ; then
+  if [[ $plugin = "mutantscan" ]] || [[ $plugin = "handles" ]] || [[ $plugin = "privs" ]]  || [[ $plugin = "envars" ]] ; then
     vol.py --profile=$profile -f $baseline_memory_image $plugin --silent &> $output_dir/$plugin/baseline-$plugin.txt &
     vol.py --profile=$profile -f $infected_memory_image $plugin --silent &> $output_dir/$plugin/infected-$plugin.txt &
     wait
@@ -118,8 +117,8 @@ do
     wait
   # running timeliner in background (time consuming):
   elif [[ $plugin = "timeliner" ]] ; then
-    vol.py --profile=$profile -f $baseline_memory_image $plugin --type=Process,Socket,Shimcache &> $output_dir/$plugin/baseline-$plugin.txt &
-    vol.py --profile=$profile -f $infected_memory_image $plugin --type=Process,Socket,Shimcache &> $output_dir/$plugin/infected-$plugin.txt &
+    vol.py --profile=$profile -f $baseline_memory_image $plugin --type=Process,Socket,Shimcache,IEHistory,Userassist &> $output_dir/$plugin/baseline-$plugin.txt &
+    vol.py --profile=$profile -f $infected_memory_image $plugin --type=Process,Socket,Shimcache,IEHistory,Userassist &> $output_dir/$plugin/infected-$plugin.txt &
   elif [[ $plugin = "malfind" ]] ; then
     mkdir $output_dir/$plugin/dump-dir-baseline
     mkdir $output_dir/$plugin/dump-dir-infected
@@ -263,7 +262,7 @@ if [[ $@ =~ "--process-checks" ]] ; then
   done
 
   # verify if any processes have suspicious l33t names:
-  cat $output_dir/psscan/infected-psscan.txt | grep -E -i "snss|crss|cssrs|csrsss|lass|isass|lssass|lsasss|scvh|svch0st|svhos|svchst|lsn|g0n|l0g|nvcpl|rundii" > $output_dir/tmpfolder/suspicious_process.tmp
+  cat $output_dir/psscan/infected-psscan.txt | grep -E -i "snss|crss|cssrs|csrsss|lass|isass|lssass|lsasss|scvh|svch0st|svhos|svchst|svchosts|lsn|g0n|l0g|nvcpl|rundiiwauclt" > $output_dir/tmpfolder/suspicious_process.tmp
   if [[ -s $output_dir/tmpfolder/suspicious_process.tmp ]]; then
     echo -e "\nProcesses with suspicious names:" >> $output_dir/tmpfolder/process-checks.tmp
     sed -n '2p' $output_dir/psscan/infected-psscan.txt >> $output_dir/tmpfolder/process-checks.tmp
@@ -409,7 +408,7 @@ if [[ $@ =~ "--registry-checks" ]] ; then
 
   # finding changes in registry keys commonly used for persistence
   plugin="printkey"
-  for key in "Microsoft\Windows\CurrentVersion\RunOnce" "Microsoft\Windows\CurrentVersion\Run" "Microsoft\Windows\CurrentVersion\RunServices" "Microsoft\Windows\CurrentVersion\RunServicesOnce" "Software\Microsoft\Windows NT\CurrentVersion\Winlogon" "Microsoft\Security Center\Svc" ; do
+  for key in "Microsoft\Windows\CurrentVersion\RunOnce" "Microsoft\Windows\CurrentVersion\Run" "Software\Microsoft\Windows\CurrentVersion\RunOnce" "Software\Microsoft\Windows\CurrentVersion\Run" "Microsoft\Windows\CurrentVersion\RunServices" "Microsoft\Windows\CurrentVersion\RunServicesOnce" "Software\Microsoft\Windows NT\CurrentVersion\Winlogon" "Microsoft\Security Center\Svc" ; do
     vol.py --profile=$profile -f $baseline_memory_image $plugin -K $key &> $output_dir/tmpfolder/base.tmp &
     vol.py --profile=$profile -f $infected_memory_image $plugin -K $key &> $output_dir/tmpfolder/inf.tmp &
     wait
@@ -447,7 +446,7 @@ if [[ $@ =~ "--registry-checks" ]] ; then
   #find other suspicious strings in registry
   for pattern in Web Antivirus Virtualisation Sandbox Sysinternals Shell Keylogger Password Powershell Infogathering Tool Banking Socialsites Misc ; do
     if [[ $pattern == "Web" ]] ; then regex_str="'agent|cookie|download|mozilla|post|proxy|responsetext|socket|useragent|user-agent|urlmon|user_agent|winhttp|http'" ; fi
-    if [[ $pattern == "Antivirus" ]] ; then regex_str="'antivir|avast|avcons|avgctrl|bitdefender|F-Secure|firewall|kaspersky|mcafee|norton|norman|safeweb'" ; fi
+    if [[ $pattern == "Antivirus" ]] ; then regex_str="'antivir|avast|avcons|avgctrl|bitdefender|F-Secure|firewall|kaspersky|mcafee|norton|norman|safeweb|windefend'" ; fi
     if [[ $pattern == "Virtualisation" ]] ; then regex_str="'citrix|parallels|proxmox|qemu|virtualbox|vmware|xen'" ; fi
     if [[ $pattern == "Sandbox" ]] ; then regex_str="'anubis|capturebat|cuckoo|debug|fiddler|fireeye|noriben|sandb|snort|tcpdump|wireshark'" ; fi
     if [[ $pattern == "Sysinternals" ]] ; then regex_str="'filemon|sysinternal|procmon|regmon|sysmon'" ; fi
@@ -459,7 +458,7 @@ if [[ $@ =~ "--registry-checks" ]] ; then
     if [[ $pattern == "Tool" ]] ; then regex_str="'cmd.exe|metasploit|msf|netsh|psexec|ping|wmic'" ; fi
     if [[ $pattern == "Banking" ]] ; then regex_str="'banc|banco|bank|Barclays|hsbc|jpmorgan|lloyds|natwest|paypal|santander'" ; fi
     if [[ $pattern == "Socialsites" ]] ; then regex_str="'facebook|google|instagram|login|linkedin|twitter|yahoo|youtube'" ; fi
-    if [[ $pattern == "Misc" ]] ; then regex_str="'backdoor|botnet|malware|registry|rootkit|Trojan|veil|policy|\\.exe|\\.dll'" ; fi
+    if [[ $pattern == "Misc" ]] ; then regex_str="'backdoor|botnet|chrome|currentversion|firefox|malware|registry|rootkit|Trojan|veil|policy|\\.exe|\\.dll'" ; fi
 
     if grep -E -i $regex_str $output_dir/$plugin/diff-registry-strings.txt > /dev/null ; then
       echo -e "\n$pattern strings found in registry:" >> $output_dir/tmpfolder/registry_checks.tmp
@@ -478,7 +477,7 @@ if [[ $@ =~ "--string-checks" ]] ; then
   mkdir $output_dir/strings
   strings -a -td $output_dir/malfind/dump-dir-infected/* > $output_dir/tmpfolder/process-strings.tmp 2> /dev/null
   strings -a -td $output_dir/procdump/* >> $output_dir/tmpfolder/process-strings.tmp 2> /dev/null
-  vol.py --profile=$profile -f $infected_memory_image strings --string-file=$output_dir/tmpfolder/process-strings.tmp &> $output_dir/strings/process-strings-vol.txt
+  vol.py --profile=$profile -f $infected_memory_image strings -s --string-file=$output_dir/tmpfolder/process-strings.tmp &> $output_dir/strings/process-strings-vol.txt
 
   #find ips/domains/emails in strings
   cat $output_dir/strings/process-strings-vol.txt | grep -o -E '\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]' | uniq >> $output_dir/tmpfolder/infected-ip-domains.tmp
@@ -492,7 +491,7 @@ if [[ $@ =~ "--string-checks" ]] ; then
   #find other suspicious strings 
   for pattern in Web Antivirus Virtualisation Sandbox Sysinternals Shell Keylogger Password Powershell Infogathering Tool Banking Socialsites Misc ; do
     if [[ $pattern == "Web" ]] ; then regex_str="'agent|cookie|download|mozilla|post|responsetext|socket|useragent|user-agent|urlmon|user_agent|winhttp|http'" ; fi
-    if [[ $pattern == "Antivirus" ]] ; then regex_str="'antivir|avast|avcons|avgctrl|bitdefender|F-Secure|firewall|kaspersky|mcafee|norton|norman|safeweb'" ; fi
+    if [[ $pattern == "Antivirus" ]] ; then regex_str="'antivir|avast|avcons|avgctrl|bitdefender|F-Secure|firewall|kaspersky|mcafee|norton|norman|safeweb|windefend'" ; fi
     if [[ $pattern == "Virtualisation" ]] ; then regex_str="'citrix|parallels|proxmox|qemu|virtualbox|vmware|xen'" ; fi
     if [[ $pattern == "Sandbox" ]] ; then regex_str="'anubis|capturebat|cuckoo|debugger|fiddler|fireeye|noriben|sandbox|snort|tcpdump|wireshark'" ; fi
     if [[ $pattern == "Sysinternals" ]] ; then regex_str="'filemon|sysinternal|procmon|regmon|sysmon'" ; fi
@@ -504,7 +503,7 @@ if [[ $@ =~ "--string-checks" ]] ; then
     if [[ $pattern == "Tool" ]] ; then regex_str="'cmd.exe|metasploit|msf|netsh|psexec|ping.exe|wmic'" ; fi
     if [[ $pattern == "Banking" ]] ; then regex_str="'banc|banco|bank|Barclays|hsbc|jpmorgan|lloyds|natwest|paypal|santander'" ; fi
     if [[ $pattern == "Socialsites" ]] ; then regex_str="'facebook|google|instagram|login|linkedin|twitter|yahoo|youtube'" ; fi
-    if [[ $pattern == "Misc" ]] ; then regex_str="'backdoor|botnet|malware|rootkit|Trojan|veil|policy'" ; fi
+    if [[ $pattern == "Misc" ]] ; then regex_str="'backdoor|botnet|chrome|currentversion|firefox|malware|rootkit|Trojan|veil|policy'" ; fi
 
     if grep -E -i $regex_str $output_dir/strings/process-strings-vol.txt > /dev/null ; then
       echo -e "\n$pattern strings found in memory:" >> $output_dir/tmpfolder/string_checks.tmp
@@ -588,8 +587,8 @@ do
      echo -e "\n\nNew $plugin entries" >> $output_dir/$report
      echo -e "===========================================================================\n" >> $output_dir/$report
      cat $output_dir/tmpfolder/$plugin.tmp >> $output_dir/$report
-    # filtering atomscan results:
-    elif [[ $plugin = "atomscan" ]] ; then
+    # filtering atoms and atomscan results:
+    elif [[ $plugin = "atomscan" ]] || [[ $plugin = "atoms" ]] ; then
      cat $output_dir/$plugin/diff-$plugin.txt | grep -i ".dll"  >> $output_dir/tmpfolder/$plugin.tmp
      if [[ -s $output_dir/tmpfolder/$plugin.tmp ]] ; then
        echo -e "\n\nNew $plugin entries" >> $output_dir/$report
@@ -602,18 +601,33 @@ do
      fi
     # filtering filescan results:
     elif [[ $plugin = "filescan" ]] ; then
-     cat $output_dir/$plugin/diff-$plugin.txt | grep -E -i "\\ProgramData|\\Recycle|\\Windows\\Temp|\\Users\\All|\\Users\\Default|\\Users\\Public|\\ProgramData|AppData" | sort | uniq | grep -v -E ".db$" >> $output_dir/tmpfolder/$plugin.tmp
-     if [[ -s $output_dir/tmpfolder/$plugin.tmp ]] ; then
-       echo -e "\n\nNew $plugin entries" >> $output_dir/$report
-       echo -e "===========================================================================\n" >> $output_dir/$report
-       sed -n '2p' $output_dir/$plugin/infected-$plugin.txt >> $output_dir/$report
-       sed -n '3p' $output_dir/$plugin/infected-$plugin.txt >> $output_dir/$report
-       cat $output_dir/tmpfolder/$plugin.tmp >> $output_dir/$report
-     else
-       echo -e "$plugin" >> $output_dir/tmpfolder/no_new_entries.tmp
-     fi
+      cat $output_dir/$plugin/diff-$plugin.txt | grep -E -i "\\ProgramData|\\Recycle|\\Windows\\Temp|\\Users\\All|\\Users\\Default|\\Users\\Public|\\ProgramData|AppData" | sort | uniq | grep -v -E ".db$" | grep -v -E ".lnk$" >> $output_dir/tmpfolder/$plugin.tmp
+      if [[ -s $output_dir/tmpfolder/$plugin.tmp ]] ; then
+        echo -e "\n\nNew $plugin entries" >> $output_dir/$report
+        echo -e "===========================================================================\n" >> $output_dir/$report
+        sed -n '2p' $output_dir/$plugin/infected-$plugin.txt >> $output_dir/$report
+        sed -n '3p' $output_dir/$plugin/infected-$plugin.txt >> $output_dir/$report
+        cat $output_dir/tmpfolder/$plugin.tmp >> $output_dir/$report
+      else
+        echo -e "$plugin" >> $output_dir/tmpfolder/no_new_entries.tmp
+      fi
+    # filtering svcscan results:
+    elif [[ $plugin = "svcscan" ]] ; then
+      cat $output_dir/$plugin/baseline-$plugin.txt | grep -i "Binary Path" | sort | uniq > $output_dir/tmpfolder/baseline-$plugin.tmp
+      cat $output_dir/$plugin/infected-$plugin.txt | grep -i "Binary Path" | sort | uniq > $output_dir/tmpfolder/infected-$plugin.tmp
+      diff $output_dir/tmpfolder/baseline-$plugin.tmp $output_dir/tmpfolder/infected-$plugin.tmp | grep -E "^>" | sed 's/^..//' > $output_dir/tmpfolder/diff-$plugin.tmp
+      if [[ -s $output_dir/tmpfolder/diff-$plugin.tmp ]] ; then
+        echo -e "\n\nNew $plugin entries" >> $output_dir/$report
+        echo -e "===========================================================================\n" >> $output_dir/$report
+        cat $output_dir/tmpfolder/diff-$plugin.tmp | sed 's,\\,\\\\\\\\,g' > $output_dir/tmpfolder/loop-$plugin.tmp
+        while read line ; do 
+          cat $output_dir/$plugin/infected-$plugin.txt | grep -B 9 "`echo $line`" >> $output_dir/$report ;
+        done < $output_dir/tmpfolder/loop-$plugin.tmp
+      else
+        echo -e "$plugin" >> $output_dir/tmpfolder/no_new_entries.tmp
+      fi
     # processing plugins that don't need output formatting:
-    elif [[ $plugin = "devicetree" ]] || [[ $plugin = "orphanthreads" ]] || [[ $plugin = "cmdline" ]] || [[ $plugin = "consoles" ]] || [[ $plugin = "svcscan" ]] || [[ $plugin = "driverirp" ]] || [[ $plugin = "malfind" ]] || [[ $plugin = "getsids" ]] ; then
+    elif [[ $plugin = "devicetree" ]] || [[ $plugin = "orphanthreads" ]] || [[ $plugin = "cmdline" ]] || [[ $plugin = "consoles" ]] || [[ $plugin = "svcscan" ]] || [[ $plugin = "driverirp" ]] || [[ $plugin = "malfind" ]] || [[ $plugin = "getsids" ]] || [[ $plugin = "shellbags" ]] || [[ $plugin = "iehistory" ]] || [[ $plugin = "sessions" ]] || [[ $plugin = "eventhooks" ]] ; then
       echo -e "\n\nNew $plugin entries" >> $output_dir/$report
       echo -e "===========================================================================\n" >> $output_dir/$report
       cat $output_dir/$plugin/diff-$plugin.txt >> $output_dir/$report
@@ -652,7 +666,7 @@ do
         echo -e "\nHint: Check the output of handles for suspicious processes, and grep for mutants, then Google those. Also grep the output of ldrmodules for any hidden dlls associated with suspicious processes. Use dlldump to dump suspicious DLLs from memory to disk." >> $output_dir/$report
       fi
       if [[ $plugin = "timers" ]] ; then
-        echo -e "\nHint: Malware can set kernel timers to run functions at specified intervals." >> $output_dir/$report
+        echo -e "\nHint: Malware can set kernel timers to run functions at specified intervals. Look for timers associated with 'UNKNOWN' modules." >> $output_dir/$report
       fi
       if [[ $plugin = "gditimers" ]] ; then
         echo -e "\nHint: Malware can set timers to run functions at specified intervals." >> $output_dir/$report
@@ -663,11 +677,23 @@ do
       if [[ $plugin = "ssdt" ]] ; then
         echo -e "\nHint: Some rootkits manipulate SSDT entries to hide its files or registry entries from usermode." >> $output_dir/$report
       fi
+      if [[ $plugin = "atoms" ]] ; then
+        echo -e "\nHint: atoms are strings shared globally between applications in a user session. They can be used by malware as mutexes. The output could be verbose and was filtered to only show new DLLs." >> $output_dir/$report
+      fi
       if [[ $plugin = "atomscan" ]] ; then
         echo -e "\nHint: atomscan output was filtered to only show new DLLs (potentially injected to geniune processes)." >> $output_dir/$report
       fi
       if [[ $plugin = "filescan" ]] ; then
         echo -e "\nHint: filescan output was filtered to only show suspicious new files in certain directories." >> $output_dir/$report
+      fi
+      if [[ $plugin = "iehistory" ]] ; then
+        echo -e "\nHint: iehistory can reveal history details of malware that uses the WinINet API." >> $output_dir/$report
+      fi
+      if [[ $plugin = "envars" ]] ; then
+        echo -e "\nHint: Some malware will change the PATH and PATHEXT environment variables." >> $output_dir/$report
+      fi
+      if [[ $plugin = "messagehooks" ]] ; then
+        echo -e "\nHint: messagehooks can detect hooks that attempt to catch user strokes." >> $output_dir/$report
       fi
     fi
   else
