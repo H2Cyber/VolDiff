@@ -139,32 +139,6 @@ Flags: CommitCharge: 165, MemCommit: 1, PrivateMemory: 1, Protection: 6
 0x40003f 00               DB 0x0
 
 
-Suspicious new timeliner entries
-=========================================================================
-
-1970-01-01 00:00:00 UTC+0000|[PE HEADER (exe)]| kmaxqsj.exe| Process: kmaxqsj.exe/PID: 2300/PPID: 4044/Process POffset: 0x3fc7f030/DLL Base: 0x00400000
-1970-01-01 00:00:00 UTC+0000|[PE HEADER (exe)]| malwr.exe| Process: malwr.exe/PID: 2908/PPID: 4020/Process POffset: 0x3fc8ed40/DLL Base: 0x00400000
-2015-04-18 23:40:59 UTC+0000|[PROCESS]| svchost.exe| PID: 640/PPID: 516/POffset: 0x3dd6bb70
-2015-04-18 23:41:00 UTC+0000|[PROCESS]| svchost.exe| PID: 1228/PPID: 516/POffset: 0x3da31968
-2015-05-02 19:32:00 UTC+0000|[NETWORK CONNECTION]| 172.16.108.128:1900 -> *:*| 3084/UDPv4//0x3db82140
-2015-05-02 19:32:00 UTC+0000|[NETWORK CONNECTION]| 172.16.108.128:58385 -> *:*| 3084/UDPv4//0x3d8473f0
-2015-05-02 19:32:00 UTC+0000|[NETWORK CONNECTION]| fe80::4847:83c0:c352:feac:1900 -> *:*| 3084/UDPv6//0x3fd62f50
-2015-05-02 19:32:00 UTC+0000|[NETWORK CONNECTION]| fe80::4847:83c0:c352:feac:58383 -> *:*| 3084/UDPv6//0x3db2ba68
-2015-05-02 19:32:45 UTC+0000|[PROCESS]| malwr.exe| PID: 2908/PPID: 4020/POffset: 0x3fc8ed40
-2015-05-02 19:32:56 UTC+0000|[PROCESS]| taskeng.exe| PID: 2080/PPID: 916/POffset: 0x3daee030
-2015-05-02 19:33:07 UTC+0000|[PROCESS]| kmaxqsj.exe| PID: 2300/PPID: 4044/POffset: 0x3fc7f030
-2015-05-02 19:33:39 UTC+0000|[PROCESS]| SearchFilterHo| PID: 2168/PPID: 2608/POffset: 0x3fa12030
-2015-05-02 19:33:39 UTC+0000|[PROCESS]| SearchProtocol| PID: 3852/PPID: 2608/POffset: 0x3fa10b68
-2015-05-02 19:33:48 UTC+0000|[NETWORK CONNECTION]| 0.0.0.0:0 -> *:*| 1228/UDPv4//0x3db4c1a0
-2015-05-02 19:33:48 UTC+0000|[NETWORK CONNECTION]| 0.0.0.0:5355 -> *:*| 1228/UDPv4//0x3fccf320
-2015-05-02 19:33:48 UTC+0000|[NETWORK CONNECTION]| 0.0.0.0:5355 -> *:*| 1228/UDPv4//0x3fccf6b0
-2015-05-02 19:33:48 UTC+0000|[NETWORK CONNECTION]| :::0 -> *:*| 1228/UDPv6//0x3db4c1a0
-2015-05-02 19:33:48 UTC+0000|[NETWORK CONNECTION]| 172.16.108.128:68 -> *:*| 756/UDPv4//0x3fdcacd8
-2015-05-02 19:33:48 UTC+0000|[NETWORK CONNECTION]| :::5355 -> *:*| 1228/UDPv6//0x3fccf320
-2015-05-02 19:33:48 UTC+0000|[PROCESS]| cmd.exe| PID: 2484/PPID: 1540/POffset: 0x3fc6e780 End: 2015-05-02 19:33:48 UTC+0000
-2015-05-02 19:33:48 UTC+0000|[PROCESS]| conhost.exe| PID: 2876/PPID: 376/POffset: 0x3fda2518 End: 2015-05-02 19:33:48 UTC+0000
-
-
 Suspicious new svcscan entries
 =========================================================================
 
