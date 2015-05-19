@@ -31,7 +31,7 @@ Options
 A number of options are available in VolDiff to automatically hunt and report anomalies.
 
 <pre>
-./VolDiff.sh [path/to/baseline.vmem] path/to/infected.vmem profile [Options]
+./VolDiff.sh [path/to/baseline.vmem] path/to/infected.vmem profile [options]
 </pre>
 
 The recommended option to use with VolDiff is `--process-checks` , which checks process parent/child relationships, execution path, unusual loaded DLLs, suspicious imports and much more.
