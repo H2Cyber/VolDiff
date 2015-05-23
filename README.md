@@ -175,4 +175,4 @@ Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
 
 Feedback and Bugs
 -------------------
-Please submit feedback, report bugs, or send ideas that you want to see implemented to @aim4r (twitter), houcem.hachicha[@]gmail.com or on Github.
+Please submit feedback, report bugs, or send ideas that you want to see implemented to @aim4r (twitter), houcem.hachicha[@]gmail.com or Github.
