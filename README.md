@@ -82,7 +82,7 @@ Flags: CommitCharge: 165, MemCommit: 1, PrivateMemory: 1, Protection: 6
 0x40000a 0000             ADD [EAX], AL
 0x40000c ff               DB 0xff
 
-New driver modules
+Suspicious driver modules
 ===========================================================================
 
 Module                               Driver
@@ -95,7 +95,7 @@ UNKNOWN                              \Driver\TdiFlt2
 UNKNOWN                              \Driver\TdiFlt
 UNKNOWN                              \Driver\stopsec
 
-New callbacks
+Suspicious callbacks
 ===========================================================================
 
 Type                                 Callback   Module   
