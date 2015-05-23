@@ -2,7 +2,7 @@
 VolDiff: Malware Memory Footprint Analysis
 ==========================================
 
-VolDiff is a bash script that runs [Volatility](https://github.com/volatilityfoundation/volatility "Volatility Framework") plugins against memory images captured before and after malware execution. It creates a report that highlights system changes based on memory (RAM) analysis.
+VolDiff is a bash script that runs [Volatility](https://github.com/volatilityfoundation/volatility) plugins against memory images captured before and after malware execution. It creates a report that highlights system changes based on memory (RAM) analysis.
 
 VolDiff can additionally be used on a single memory image to automate Volatility plugin execution, and hunt for malicious patterns.
 
@@ -167,7 +167,7 @@ callbacks
 
 Inspiration
 ------------
-This work was initially inspired by Andrew Case [@attrc](https://twitter.com/attrc "@attrc") talk on [analyzing the sophisticated Careto malware sample with memory forensics] (http://2014.video.sector.ca/video/110388398 "analyzing the sophisticated Careto malware sample with memory forensics"). Kudos to [@attrc](https://twitter.com/attrc "@attrc") and all the Volatility development team for developping and maintaining the greatest memory forensic framework out there!
+This work was initially inspired by Andrew Case [@attrc](https://twitter.com/attrc) talk on [analyzing the sophisticated Careto malware sample with memory forensics] (http://2014.video.sector.ca/video/110388398 "analyzing the sophisticated Careto malware sample with memory forensics"). Kudos to [@attrc](https://twitter.com/attrc) and all the Volatility development team for developping and maintaining the greatest memory forensic framework out there!
 
 Licence
 --------
@@ -177,4 +177,4 @@ Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
 
 Feedback and Bugs
 -------------------
-Please submit feedback, report bugs, or send ideas that you want to see implemented to [@aim4r](https://twitter.com/aim4r "@aim4r"), houcem.hachicha[@]gmail.com or [Github](https://github.com/aim4r/VolDiff/issues "Github VolDiff issues").
+Please submit feedback, report bugs, or send ideas that you want to see implemented to [@aim4r](https://twitter.com/aim4r), houcem.hachicha[@]gmail.com or [Github](https://github.com/aim4r/VolDiff/issues).
