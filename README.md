@@ -167,6 +167,10 @@ callbacks
 
 </pre>
 
+Inspiration
+------------
+This work was initially inspired by Andrew Case (@attrc) talk on analyzing the sophisticated Careto malware sample with memory forensics (http://2014.video.sector.ca/video/110388398). Kudos to @attrc and all the Volatility development team for developping and maintaining Volatility.
+
 Licence
 --------
 Free open source software. 
