@@ -26,8 +26,8 @@ VolDiff can also be used to analyse a single memory image:
 ./VolDiff.sh path/to/image.vmem profile [options] 
 </pre>
 
-Options
-----------
+Automated Malware Checks
+-------------------------
 The recommended option to use with VolDiff is `--malware-checks` , which checks process parent/child relationships, unusual loaded DLLs, suspicious imports, malicious drivers and much more.
 
 <pre>
