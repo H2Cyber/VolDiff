@@ -39,7 +39,7 @@ The recommended option to use with VolDiff is `--malware-checks` , which checks 
 Use `--help` to view other available options: 
 <pre> ./VolDiff.sh --help </pre>
 
-Sample Report
+Sample Output
 ---------------
 <pre>
 
