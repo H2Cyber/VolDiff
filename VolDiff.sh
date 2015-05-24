@@ -1,7 +1,7 @@
 #!/bin/bash
 # VolDiff malware analysis script by @aim4r
 
-version="1.1.0"
+version="1.2.0"
 
 ################################ PRINT VOLDIFF BANNER ################################
 echo -e " _    __      ______  _ ________"
@@ -48,20 +48,20 @@ fi
 
 ################################ DECLARING LIST OF VOLATILITY PLUGINS TO PROCESS ################################
 # volatility plugins to run:
-declare -a plugins_to_run=("handles" "psxview" "netscan" "iehistory" "getsids" "pslist" "psscan" "cmdline" "consoles" "dlllist" "filescan" "shimcache" "shelbags" "sessions" "messagehooks" "eventhooks" "svcscan" "envars" "mutantscan" "symlinkscan" "atoms" "atomscan" "drivermodule" "mftparser" "driverscan" "devicetree" "modules" "modscan" "unloadedmodules" "callbacks" "ldrmodules" "privs" "orphanthreads" "malfind" "idt" "gdt" "driverirp" "deskscan" "timers" "gditimers" "ssdt")
+declare -a plugins_to_run=("handles" "psxview" "netscan" "iehistory" "getsids" "pslist" "psscan" "cmdline" "consoles" "dlllist" "filescan" "shimcache" "shelbags" "sessions" "messagehooks" "eventhooks" "svcscan" "envars" "mutantscan" "symlinkscan" "atoms" "atomscan" "drivermodule" "mftparser" "driverscan" "devicetree" "modules" "modscan" "unloadedmodules" "callbacks" "ldrmodules" "privs" "hashdump" "orphanthreads" "malfind" "idt" "gdt" "driverirp" "deskscan" "timers" "gditimers" "ssdt")
 
 # volatility plugins to report on (order matters!) / dual mode:
-declare -a plugins_to_report=("pslist" "psscan" "psxview" "netscan" "iehistory" "malfind" "sessions" "privs" "messagehooks" "eventhooks" "svcscan" "envars" "shimcache" "shelbags" "cmdline" "consoles" "drivermodule" "driverscan" "driverirp" "modules" "modscan" "unloadedmodules" "devicetree" "callbacks" "orphanthreads" "mutantscan" "symlinkscan" "ssdt")
+declare -a plugins_to_report=("pslist" "psscan" "psxview" "netscan" "iehistory" "malfind" "sessions" "privs" "messagehooks" "eventhooks" "envars" "shimcache" "shelbags" "cmdline" "consoles" "hashdump" "drivermodule" "driverscan" "driverirp" "modules" "modscan" "unloadedmodules" "devicetree" "callbacks" "orphanthreads" "mutantscan" "symlinkscan" "ssdt")
 
 # volatility plugins to report on (order matters!) / standalone mode:
 declare -a plugins_to_report_standalone=("netscan" "psscan" "psxview" "malfind" "cmdline" "consoles" "iehistory")
 
 ################################ HARDCODED REGEX EXPRESSIONS ################################
-hacker_process_regex="at.exe|chtask.exe|ftp.exe|net.exe|nbtstat.exe|net1.exe|ping.exe|powershell|procdump.exe|psexec|quser.exe|reg.exe|regsvr32.exe|schtasks|systeminfo.exe|taskkill.exe|winrm|wmic|xcopy.exe"
+hacker_process_regex="at.exe|chtask.exe|clearev|ftp.exe|net.exe|nbtstat.exe|net1.exe|ping.exe|powershell|procdump.exe|psexec|quser.exe|reg.exe|regsvr32.exe|schtasks|systeminfo.exe|taskkill.exe|timestomp|winrm|wmic|xcopy.exe"
 hacker_dll_regex="mimilib.dll|sekurlsa.dll|wceaux.dll|iamdll.dll"
 
 # suspicious process names
-l33t_process_name="snss|crss|cssrs|csrsss|lass|isass|lssass|lsasss|scvh|svch0st|svhos|svchst|svchosts|lsn|g0n|l0g|nvcpl|rundii|wauclt|spscv|spppsvc|sppscv|sppcsv|taskchost|tskhost|msorsv|corsw|arch1ndex|wmipvr|wmiprse"
+l33t_process_name="snss|crss|cssrs|csrsss|lass|isass|lssass|lsasss|scvh|svch0st|svhos|svchst|svchosts|lsn|g0n|l0g|nvcpl|rundii|wauclt|spscv|spppsvc|sppscv|sppcsv|taskchost|tskhost|msorsv|corsw|arch1ndex|wmipvr|wmiprse|runddl"
 
 # usual process list
 usual_processes="sppsvc.exe|audiodg.exe|mscorsvw.exe|SearchIndexer|TPAutoConnSvc|TPAutoConnect|taskhost.exe|smss.exe|crss.exe|wininit.exe|services.exe|lsass.exe|svchost.exe|lsm.exe|explorer.exe|winlogon|conhost.exe|dllhost.exe|spoolsv.exe|vmtoolsd.exe|WmiPrvSE.exe"
@@ -86,12 +86,12 @@ keylogger_regex_str="backspace|klog|keylog|shift"
 filepath_regex_str='C:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]*'
 password_regex_str="brute|credential|creds|mimikatz|passwd|password|pwd|sniff|stdapi|WCEServicePipe|wce_krbtkts"
 powershell_regex_str="powerview|powershell"
-infogathering_regex_str="getcurrent|getproc|gethost|wmic|GetVolumeInformation"
+infogathering_regex_str="gethost|wmic|GetVolumeInformation"
 banking_regex_str="banc|banco|bank|Barclays|hsbc|jpmorgan|lloyds|natwest|paypal|santander"
 socialsites_regex_str="facebook|instagram|linkedin|twitter|yahoo|youtube"
 exec_regex_str="\.bat|\.cmd|\.class|\.exe|\.jar|\.js|\.jse|\.SCR|\.VBE|\.vbs"
 crypto_regex_str="bitlocker|crypt|truecrypt|veracrypt"
-other_regex_str="admin|backdoor|botnet|chrome|currentversion|firefox|hosts|login|malware|netsh|registry|rootkit|sleep|smtp|torrent|Trojan|UserInit"
+other_regex_str="admin|backdoor|botnet|chrome|clearev|currentversion|firefox|hosts|login|malware|netsh|registry|rootkit|sleep|smtp|timestomp|torrent|Trojan|UserInit"
 
 ################################ RUNNING MODE ################################
 if [[ -f $2 ]] ; then
@@ -163,6 +163,10 @@ if [[ $mode = "dual" ]] ; then
       vol.py --profile=$profile -f $baseline_memory_image threads -F OrphanThread &> $output_dir/orphanthreads/baseline-orphanthreads.txt &
       vol.py --profile=$profile -f $infected_memory_image threads -F OrphanThread &> $output_dir/orphanthreads/infected-orphanthreads.txt &
       wait
+    elif [[ $plugin = "psxview" ]]  ; then
+      vol.py --profile=$profile -f $baseline_memory_image psxview -R &> $output_dir/psxview/baseline-psxview.txt &
+      vol.py --profile=$profile -f $infected_memory_image psxview -R &> $output_dir/psxview/infected-psxview.txt &
+      wait
     elif [[ $plugin = "malfind" ]] ; then
       mkdir $output_dir/$plugin/dump-dir-baseline
       mkdir $output_dir/$plugin/dump-dir-infected
@@ -193,9 +197,22 @@ if [[ $mode = "dual" ]] ; then
   done < $output_dir/tmpfolder/new-procpids.tmp
   wait
 
-  ################################ MALWARE CHECKS ################################
+
   if [[ $@ =~ "--malware-checks" ]] ; then
+    touch $output_dir/tmpfolder/malware-checks.tmp
     echo -e "Hunting for process anomalies..."
+
+    ################################ MALWARE CHECKS - NETWORK ################################
+
+    # compute unique IPs from netscan output:
+    cat $output_dir/netscan/diff-netscan.txt | grep -o -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | sort | uniq | grep -v -E "127\.0\.0\.1|0\.0\.0\.0" > $output_dir/tmpfolder/netscan-uniq-ips.tmp
+    if [[ -s $output_dir/tmpfolder/netscan-uniq-ips.tmp ]]; then
+      echo -e "\n\nUnique IP addresses from netscan output." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+      cat $output_dir/tmpfolder/netscan-uniq-ips.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+    fi
+
+    ################################ MALWARE CHECKS - PROCESS ANOMALIES ################################
 
     # verify PID of System process = 4
     cat $output_dir/psscan/infected-psscan.txt | grep " System " | tr -s ' ' | cut -d " " -f 3 > $output_dir/tmpfolder/system-pids.tmp
@@ -430,36 +447,7 @@ if [[ $mode = "dual" ]] ; then
       cat $output_dir/tmpfolder/remote_shares.tmp >> $output_dir/tmpfolder/malware-checks.tmp
     fi
 
-    # analyse import tables in new processes:
-    plugin=impscan
-    tail -n +4 $output_dir/psscan/diff-psscan.txt | tr -s ' ' | cut -d " " -f 3 | sort | uniq > $output_dir/tmpfolder/procids.tmp
-    cat $output_dir/malfind/diff-malfind.txt | grep "Address:" | cut -d ' ' -f 4 | sort | uniq >> $output_dir/tmpfolder/procids.tmp
-    cat $output_dir/tmpfolder/procids.tmp | sort | uniq > $output_dir/tmpfolder/pids.tmp
-    while read pid; do
-      vol.py --profile=$profile -f $memory_image $plugin -p $pid &> $output_dir/tmpfolder/$pid-imports.tmp
-      process=`tail -n +4 $output_dir/psscan/infected-psscan.txt | tr -s ' ' | cut -d ' ' -f 1-3 | grep -i " "$pid | cut -d ' ' -f 2 | sort | uniq`
-      # searching for anti debug import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $anti_debug_imports > $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # search for password extraction import functions 
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $password_extract_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # searching for web request import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $web_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # searching for service import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $service_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # searching for process injection import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $process_injection_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # searching for uac bypass import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $uac_bypass_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # searching for misc import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $misc_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      if [[ -s $output_dir/tmpfolder/$pid-imports-susp.tmp ]] ; then
-        echo -e "\n\nSuspicious imports in process $process." >> $output_dir/tmpfolder/malware-checks.tmp
-        echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
-        sed -n '2p' $output_dir/tmpfolder/$pid-imports.tmp >> $output_dir/tmpfolder/malware-checks.tmp
-        sed -n '3p' $output_dir/tmpfolder/$pid-imports.tmp >> $output_dir/tmpfolder/malware-checks.tmp
-        cat $output_dir/tmpfolder/$pid-imports-susp.tmp >> $output_dir/tmpfolder/malware-checks.tmp
-      fi
-    done < $output_dir/tmpfolder/pids.tmp
+    ################################ MALWARE CHECKS - DLLs ################################
 
     # find suspicious new DLLs (dlllist):
     cat $output_dir/dlllist/diff-dlllist.txt | grep -o -E "C:.*.dll" | grep -v -i "System32" | uniq | sort > $output_dir/tmpfolder/dlls.tmp
@@ -522,10 +510,20 @@ if [[ $mode = "dual" ]] ; then
       cat $output_dir/tmpfolder/ldrmodule_hollow.tmp >> $output_dir/tmpfolder/malware-checks.tmp
     fi
 
+    ################################ MALWARE CHECKS - FILES ################################
+
+    # find DLLs/EXES loaded from temp folders (dlllist):
+    cat $output_dir/dlllist/diff-dlllist.txt | grep -E -i "TMP|TEMP|AppData" | sort | uniq > $output_dir/tmpfolder/dlllist_temp.tmp
+    if [[ -s $output_dir/tmpfolder/dlllist_temp.tmp ]] ; then
+      echo -e "\n\nNew DLLs/EXEs loaded from temp folders." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+      cat $output_dir/tmpfolder/dlllist_temp.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+    fi
+
     # find hidden DLLs/EXES (ldrmodules):
     cat $output_dir/ldrmodules/diff-ldrmodules.txt | grep -E -i "False  False  False" | sort | uniq | grep -E -i ".dll$|.exe$" > $output_dir/tmpfolder/ldrmodule_hidden.tmp
     if [[ -s $output_dir/tmpfolder/ldrmodule_hidden.tmp ]] ; then
-      echo -e "\n\nNew hidden DLLs/EXE (ldrmodules)." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "\n\nNew hidden DLLs/EXEs (ldrmodules)." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '2p' $output_dir/ldrmodules/infected-ldrmodules.txt >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '3p' $output_dir/ldrmodules/infected-ldrmodules.txt >> $output_dir/tmpfolder/malware-checks.tmp
@@ -574,10 +572,89 @@ if [[ $mode = "dual" ]] ; then
       cat $output_dir/tmpfolder/ads.tmp >> $output_dir/tmpfolder/malware-checks.tmp
     fi
 
+    ################################ MALWARE CHECKS - MISC ################################
+
+    # find interresting new entries in hosts file
+    mkdir $output_dir/tmpfolder/hostsb
+    mkdir $output_dir/tmpfolder/hostsi
+    qaddressb=$(cat $output_dir/filescan/baseline-filescan.txt | grep -i -E "etc\\\\hosts$" | tr -s ' ' | cut -d ' ' -f 1)
+    if [[ ! -z "$qaddressb" ]] ; then 
+      vol.py --profile=$profile -f $baseline_memory_image dumpfiles -Q $qaddressb -D $output_dir/tmpfolder/hostsb --name &> /dev/null 
+      strings $output_dir/tmpfolder/hostsb/* > $output_dir/tmpfolder/hosts_baseline.tmp  &> /dev/null
+    fi
+    qaddressi=$(cat $output_dir/filescan/infected-filescan.txt | grep -i -E "etc\\\\hosts$" | tr -s ' ' | cut -d ' ' -f 1)
+    if [[ ! -z "$qaddressi" ]] ; then 
+      vol.py --profile=$profile -f $infected_memory_image dumpfiles -Q $qaddressi -D $output_dir/tmpfolder/hostsi --name &> /dev/null 
+      strings $output_dir/tmpfolder/hostsi/* > $output_dir/tmpfolder/hosts_infected.tmp  &> /dev/null
+    fi
+    if [[ -s $output_dir/tmpfolder/hosts_baseline.tmp ]] && [[ -s $output_dir/tmpfolder/hosts_infected.tmp ]] ; then
+      diff $output_dir/tmpfolder/hosts_baseline.tmp $output_dir/tmpfolder/hosts_infected.tmp | grep -E "^>" | sed 's/^..//' &> $output_dir/tmpfolder/new-hosts.tmp
+      if [[ -s $output_dir/tmpfolder/new-hosts.tmp ]] ; then
+        echo -e "\n\nChanges in hosts files." >> $output_dir/tmpfolder/malware-checks.tmp
+        echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+        cat $output_dir/tmpfolder/new-hosts.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+      fi
+    fi
+    
+    # find suspicious new desktop instances: 
+    cat $output_dir/deskscan/diff-deskscan.txt | grep "Desktop:" >> $output_dir/tmpfolder/deskscan.tmp
+    if [[ -s $output_dir/tmpfolder/deskscan.tmp ]] ; then
+      echo -e "\n\nNew desktop instances." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+      cat $output_dir/tmpfolder/deskscan.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+      if [[ $@ =~ "--add-hints" ]] ; then
+            echo -e "\nHint: Use wintree to view a tree of the windows in suspicious desktops." >> $output_dir/tmpfolder/malware-checks.tmp
+      fi
+    fi
+
+    ################################ MALWARE CHECKS - PERSISTENCE ################################
+
+    echo -e "Searching for persistence artifacts..."
+
+    # filtering svcscan results:
+    cat $output_dir/svcscan/baseline-svcscan.txt | grep -i "Binary Path" | sort | uniq > $output_dir/tmpfolder/baseline-svcscan.tmp
+    cat $output_dir/svcscan/infected-svcscan.txt | grep -i "Binary Path" | sort | uniq > $output_dir/tmpfolder/infected-svcscan.tmp
+    diff $output_dir/tmpfolder/baseline-svcscan.tmp $output_dir/tmpfolder/infected-svcscan.tmp | grep -E "^>" | sed 's/^..//' > $output_dir/tmpfolder/diff-svcscan.tmp
+    if [[ -s $output_dir/tmpfolder/diff-svcscan.tmp ]] ; then
+      echo -e "\n\nNew services." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+      cat $output_dir/tmpfolder/diff-svcscan.tmp | sed 's,\\,\\\\\\\\,g' > $output_dir/tmpfolder/loop-svcscan.tmp
+      while read line ; do 
+        cat $output_dir/svcscan/infected-svcscan.txt | grep -B 9 "`echo $line`" >> $output_dir/tmpfolder/malware-checks.tmp
+      done < $output_dir/tmpfolder/loop-svcscan.tmp
+    fi
+
+    # find changes in registry keys commonly used for persistence:
+    for key in "Microsoft\Windows\CurrentVersion\RunOnce" "Microsoft\Windows\CurrentVersion\Run" "Software\Microsoft\Windows\CurrentVersion\RunOnce" "Software\Microsoft\Windows\CurrentVersion\Run" "Microsoft\Windows\CurrentVersion\RunServices" "Microsoft\Windows\CurrentVersion\RunServicesOnce" "Software\Microsoft\Windows NT\CurrentVersion\Winlogon" "Microsoft\Security Center\Svc" ; do
+      vol.py --profile=$profile -f $baseline_memory_image printkey -K $key &> $output_dir/tmpfolder/base.tmp &
+      vol.py --profile=$profile -f $infected_memory_image printkey -K $key &> $output_dir/tmpfolder/inf.tmp &
+      wait
+      tr < $output_dir/tmpfolder/base.tmp -d '\000' > $output_dir/tmpfolder/baseline.tmp
+      tr < $output_dir/tmpfolder/inf.tmp -d '\000' > $output_dir/tmpfolder/infected.tmp
+      diff $output_dir/tmpfolder/baseline.tmp $output_dir/tmpfolder/infected.tmp | grep -E "^>" | sed 's/^..//' &> $output_dir/tmpfolder/diff.tmp
+      if [[ -s $output_dir/tmpfolder/diff.tmp ]] ; then
+        echo -e "\n\nRegistry key $key changed." >> $output_dir/tmpfolder/malware-checks.tmp
+        echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+        tail -n +2 $output_dir/tmpfolder/infected.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+      fi
+    done
+
+    ################################ MALWARE CHECKS - KERNEL ################################
+
+    # find keylogger traces in messagehooks:
+    cat $output_dir/messagehooks/diff-messagehooks.txt | grep -i "KEYBOARD" > $output_dir/tmpfolder/keyboard_messagehooks.tmp
+    if [[ -s $output_dir/tmpfolder/keyboard_messagehooks.tmp ]]; then
+      echo -e "\n\nKeylogger traces (messagehooks)." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+      sed -n '2p' $output_dir/messagehooks/infected-messagehooks.txt >> $output_dir/tmpfolder/malware-checks.tmp
+      sed -n '3p' $output_dir/messagehooks/infected-messagehooks.txt >> $output_dir/tmpfolder/malware-checks.tmp
+      cat $output_dir/tmpfolder/keyboard_messagehooks.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+    fi
+
     # find unusual new timers:
     cat $output_dir/timers/diff-timers.txt | grep -E -v -i "ataport.SYS|ntoskrnl.exe|NETIO.SYS|storport.sys|afd.sys|cng.sys|dfsc.sys|discache.sys|HTTP.sys|luafv.sys|ndis.sys|Ntfs.sys|rdbss.sys|rdyboost.sys|spsys.sys|srvnet.sys|srv.sys|tcpip.sys|usbccgp.sys" | sort | uniq >> $output_dir/tmpfolder/timers.tmp
     if [[ -s $output_dir/tmpfolder/timers.tmp ]] ; then
-      echo -e "\n\nNew unusual timers." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "\n\nNew timers." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '2p' $output_dir/timers/infected-timers.txt >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '3p' $output_dir/timers/infected-timers.txt >> $output_dir/tmpfolder/malware-checks.tmp
@@ -590,7 +667,7 @@ if [[ $mode = "dual" ]] ; then
     # find unusual new gditimers:
     cat $output_dir/gditimers/diff-gditimers.txt | grep -E -v -i "dllhost.exe|explorer.exe|csrss.exe" | sort | uniq >> $output_dir/tmpfolder/gditimers.tmp
     if [[ -s $output_dir/tmpfolder/gditimers.tmp ]] ; then
-      echo -e "\n\nNew unusual gditimers." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "\n\nNew gditimers." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '2p' $output_dir/gditimers/infected-gditimers.txt >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '3p' $output_dir/gditimers/infected-gditimers.txt >> $output_dir/tmpfolder/malware-checks.tmp
@@ -664,52 +741,23 @@ if [[ $mode = "dual" ]] ; then
       cat $output_dir/tmpfolder/orphanthreads.tmp >> $output_dir/tmpfolder/malware-checks.tmp
     fi
 
-    # find suspicious new desktop instances: 
-    cat $output_dir/deskscan/diff-deskscan.txt | grep "Desktop:" >> $output_dir/tmpfolder/deskscan.tmp
-    if [[ -s $output_dir/tmpfolder/deskscan.tmp ]] ; then
-      echo -e "\n\nNew desktop instances." >> $output_dir/tmpfolder/malware-checks.tmp
-      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
-      cat $output_dir/tmpfolder/deskscan.tmp >> $output_dir/tmpfolder/malware-checks.tmp
-      if [[ $@ =~ "--add-hints" ]] ; then
-            echo -e "\nHint: Use wintree to view a tree of the windows in suspicious desktops." >> $output_dir/tmpfolder/malware-checks.tmp
-      fi
-    fi
+    ################################ MALWARE CHECKS - STRINGS ################################
 
-  ################################ REGISTRY CHECKS ################################
-    echo -e "Searching for changes in registry keys..."
-    touch $output_dir/tmpfolder/malware-checks.tmp
-
-    # find changes in registry keys commonly used for persistence:
-    plugin="printkey"
-    for key in "Microsoft\Windows\CurrentVersion\RunOnce" "Microsoft\Windows\CurrentVersion\Run" "Software\Microsoft\Windows\CurrentVersion\RunOnce" "Software\Microsoft\Windows\CurrentVersion\Run" "Microsoft\Windows\CurrentVersion\RunServices" "Microsoft\Windows\CurrentVersion\RunServicesOnce" "Software\Microsoft\Windows NT\CurrentVersion\Winlogon" "Microsoft\Security Center\Svc" ; do
-      vol.py --profile=$profile -f $baseline_memory_image $plugin -K $key &> $output_dir/tmpfolder/base.tmp &
-      vol.py --profile=$profile -f $infected_memory_image $plugin -K $key &> $output_dir/tmpfolder/inf.tmp &
-      wait
-      tr < $output_dir/tmpfolder/base.tmp -d '\000' > $output_dir/tmpfolder/baseline.tmp
-      tr < $output_dir/tmpfolder/inf.tmp -d '\000' > $output_dir/tmpfolder/infected.tmp
-      diff $output_dir/tmpfolder/baseline.tmp $output_dir/tmpfolder/infected.tmp | grep -E "^>" | sed 's/^..//' &> $output_dir/tmpfolder/diff.tmp
-      if [[ -s $output_dir/tmpfolder/diff.tmp ]] ; then
-        echo -e "\n\nChanged registry key $key." >> $output_dir/tmpfolder/malware-checks.tmp
-        echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
-        tail -n +2 $output_dir/tmpfolder/infected.tmp >> $output_dir/tmpfolder/malware-checks.tmp
-      fi
-    done
-
+    echo -e "Hunting for badness in memory strings..."
     # dumping and analysing registry for anomalies
-    plugin="dumpregistry"
-    mkdir $output_dir/$plugin
+    mkdir $output_dir/dumpregistry
     mkdir $output_dir/tmpfolder/baselineregistry
-    mkdir $output_dir/$plugin/infectedregistry
-    vol.py --profile=$profile -f $baseline_memory_image $plugin -D $output_dir/tmpfolder/baselineregistry &> /dev/null &
-    vol.py --profile=$profile -f $infected_memory_image $plugin -D $output_dir/$plugin/infectedregistry &> /dev/null &
+    mkdir $output_dir/dumpregistry/infectedregistry
+    vol.py --profile=$profile -f $baseline_memory_image dumpregistry -D $output_dir/tmpfolder/baselineregistry &> /dev/null &
+    vol.py --profile=$profile -f $infected_memory_image dumpregistry -D $output_dir/dumpregistry/infectedregistry &> /dev/null &
     wait
     strings -a -td $output_dir/tmpfolder/baselineregistry/* | sort | uniq > $output_dir/tmpfolder/baseline-registry-strings.txt
-    strings -a -td $output_dir/$plugin/infectedregistry/* | sort | uniq > $output_dir/tmpfolder/infected-registry-strings.txt
-    diff $output_dir/tmpfolder/baseline-registry-strings.txt $output_dir/tmpfolder/infected-registry-strings.txt | grep -E "^>" | sed 's/^..//' &> $output_dir/$plugin/diff-registry-strings.txt
+    strings -a -td $output_dir/dumpregistry/infectedregistry/* | sort | uniq > $output_dir/tmpfolder/infected-registry-strings.txt
+    diff $output_dir/tmpfolder/baseline-registry-strings.txt $output_dir/tmpfolder/infected-registry-strings.txt | grep -E "^>" | sed 's/^..//' &> $output_dir/dumpregistry/diff-registry-strings.txt
     # find ips/domains/emails in new registry strings:
-    cat $output_dir/$plugin/diff-registry-strings.txt | grep -o -E '\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]' | uniq >> $output_dir/tmpfolder/diff-reg-ip-domains.tmp
-    cat $output_dir/$plugin/diff-registry-strings.txt | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | uniq >> $output_dir/tmpfolder/diff-reg-ip-domains.tmp
-    cat $output_dir/$plugin/diff-registry-strings.txt | grep -E -o "\b[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+\b" | uniq >> $output_dir/tmpfolder/diff-reg-ip-domains.tmp
+    cat $output_dir/dumpregistry/diff-registry-strings.txt | grep -o -E '\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]' | uniq >> $output_dir/tmpfolder/diff-reg-ip-domains.tmp
+    cat $output_dir/dumpregistry/diff-registry-strings.txt | grep -E -o "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | uniq >> $output_dir/tmpfolder/diff-reg-ip-domains.tmp
+    cat $output_dir/dumpregistry/diff-registry-strings.txt | grep -E -o "\b[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+\b" | uniq >> $output_dir/tmpfolder/diff-reg-ip-domains.tmp
     if [[ -s $output_dir/tmpfolder/diff-reg-ip-domains.tmp ]] ; then
       echo -e "\n\nNew IPs, domains and email addresses found in registry." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
@@ -734,16 +782,12 @@ if [[ $mode = "dual" ]] ; then
       if [[ $pattern == "Socialsites" ]] ; then regex_str=$socialsites_regex_str ; fi
       if [[ $pattern == "Other" ]] ; then regex_str=$other_regex_str ; fi
 
-      if grep -E -i $regex_str $output_dir/$plugin/diff-registry-strings.txt > /dev/null ; then
+      if grep -E -i $regex_str $output_dir/dumpregistry/diff-registry-strings.txt > /dev/null ; then
         echo -e "\n\n$pattern strings found in registry." >> $output_dir/tmpfolder/malware-checks.tmp
         echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
-        grep -E -i $regex_str $output_dir/$plugin/diff-registry-strings.txt | sort | uniq >> $output_dir/tmpfolder/malware-checks.tmp
+        grep -E -i $regex_str $output_dir/dumpregistry/diff-registry-strings.txt | sort | uniq >> $output_dir/tmpfolder/malware-checks.tmp
       fi
     done
-
-  ################################ STRING CHECKS ################################
-    echo -e "Hunting for badness in memory strings..."
-    touch $output_dir/tmpfolder/malware-checks.tmp
 
     # running volatility strings plugin
     mkdir $output_dir/strings
@@ -787,6 +831,39 @@ if [[ $mode = "dual" ]] ; then
       fi
     done
 
+    ################################ MALWARE CHECKS - IMPORTS ################################
+
+    # analyse import tables in new processes:
+    plugin=impscan
+    tail -n +4 $output_dir/psscan/diff-psscan.txt | tr -s ' ' | cut -d " " -f 3 | sort | uniq > $output_dir/tmpfolder/procids.tmp
+    cat $output_dir/malfind/diff-malfind.txt | grep "Address:" | cut -d ' ' -f 4 | sort | uniq >> $output_dir/tmpfolder/procids.tmp
+    cat $output_dir/tmpfolder/procids.tmp | sort | uniq > $output_dir/tmpfolder/pids.tmp
+    while read pid; do
+      vol.py --profile=$profile -f $memory_image $plugin -p $pid &> $output_dir/tmpfolder/$pid-imports.tmp
+      process=`tail -n +4 $output_dir/psscan/infected-psscan.txt | tr -s ' ' | cut -d ' ' -f 1-3 | grep -i " "$pid | cut -d ' ' -f 2 | sort | uniq`
+      # searching for anti debug import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $anti_debug_imports > $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # search for password extraction import functions 
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $password_extract_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # searching for web request import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $web_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # searching for service import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $service_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # searching for process injection import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $process_injection_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # searching for uac bypass import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $uac_bypass_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # searching for misc import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $misc_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      if [[ -s $output_dir/tmpfolder/$pid-imports-susp.tmp ]] ; then
+        echo -e "\n\nSuspicious imports in process $process." >> $output_dir/tmpfolder/malware-checks.tmp
+        echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+        sed -n '2p' $output_dir/tmpfolder/$pid-imports.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+        sed -n '3p' $output_dir/tmpfolder/$pid-imports.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+        cat $output_dir/tmpfolder/$pid-imports-susp.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+      fi
+    done < $output_dir/tmpfolder/pids.tmp
+
   fi
 
   ################################ REPORT CREATION ################################
@@ -813,26 +890,9 @@ if [[ $mode = "dual" ]] ; then
   touch $output_dir/tmpfolder/no_new_entries.tmp
   for plugin in "${plugins_to_report[@]}"
   do
-    if [[ -s $output_dir/$plugin/diff-$plugin.txt ]] ; then
-      
-      # special processing for psxview:
-      if [[ $plugin = "psxview" ]] ; then
-        cat $output_dir/psxview/diff-psxview.txt | grep "[0-9] False" > $output_dir/tmpfolder/hidden.tmp
-        if [[ -s $output_dir/tmpfolder/hidden.tmp ]] ; then
-          echo -e "\n\nSuspicious $plugin entries." >> $output_dir/$report
-          echo -e "===========================================================================\n" >> $output_dir/$report
-          sed -n '2p' $output_dir/psxview/infected-psxview.txt >> $output_dir/$report
-          sed -n '3p' $output_dir/psxview/infected-psxview.txt >> $output_dir/$report
-          cat $output_dir/tmpfolder/hidden.tmp >> $output_dir/$report
-          if [[ $@ =~ "--add-hints" ]] ; then
-            echo -e "\nHint: psxview enumerates processes in 7 different ways. The output above is filtered to only display processes that were hidden." >> $output_dir/$report
-          fi
-        else
-          echo -e "$plugin" >> $output_dir/tmpfolder/no_new_entries.tmp 
-        fi
-
+    if [[ -s $output_dir/$plugin/diff-$plugin.txt ]] ; then  
       # processing pslist and psscan output:
-      elif [[ $plugin = "pslist"  ]] || [[ $plugin = "psscan"  ]] ; then
+      if [[ $plugin = "pslist"  ]] || [[ $plugin = "psscan"  ]] ; then
        echo -e "\n\nNew $plugin entries." >> $output_dir/$report
        echo -e "===========================================================================\n" >> $output_dir/$report
        sed -n '2p' $output_dir/$plugin/infected-$plugin.txt >> $output_dir/$report
@@ -859,22 +919,6 @@ if [[ $mode = "dual" ]] ; then
           echo -e "\nHint: Google mutants associated with suspicious processes." >> $output_dir/$report
         fi
 
-      # filtering svcscan results:
-      elif [[ $plugin = "svcscan" ]] ; then
-        cat $output_dir/$plugin/baseline-$plugin.txt | grep -i "Binary Path" | sort | uniq > $output_dir/tmpfolder/baseline-$plugin.tmp
-        cat $output_dir/$plugin/infected-$plugin.txt | grep -i "Binary Path" | sort | uniq > $output_dir/tmpfolder/infected-$plugin.tmp
-        diff $output_dir/tmpfolder/baseline-$plugin.tmp $output_dir/tmpfolder/infected-$plugin.tmp | grep -E "^>" | sed 's/^..//' > $output_dir/tmpfolder/diff-$plugin.tmp
-        if [[ -s $output_dir/tmpfolder/diff-$plugin.tmp ]] ; then
-          echo -e "\n\nNew $plugin entries." >> $output_dir/$report
-          echo -e "===========================================================================\n" >> $output_dir/$report
-          cat $output_dir/tmpfolder/diff-$plugin.tmp | sed 's,\\,\\\\\\\\,g' > $output_dir/tmpfolder/loop-$plugin.tmp
-          while read line ; do 
-            cat $output_dir/$plugin/infected-$plugin.txt | grep -B 9 "`echo $line`" >> $output_dir/$report ;
-          done < $output_dir/tmpfolder/loop-$plugin.tmp
-        else
-          echo -e "$plugin" >> $output_dir/tmpfolder/no_new_entries.tmp
-        fi
-
       # processing plugins that don't need output formatting:
       elif [[ $plugin = "devicetree" ]] || [[ $plugin = "orphanthreads" ]] || [[ $plugin = "cmdline" ]] || [[ $plugin = "consoles" ]] || [[ $plugin = "svcscan" ]] || [[ $plugin = "driverirp" ]] || [[ $plugin = "malfind" ]] || [[ $plugin = "shellbags" ]] || [[ $plugin = "iehistory" ]] || [[ $plugin = "sessions" ]] || [[ $plugin = "eventhooks" ]] ; then
         echo -e "\n\nNew $plugin entries." >> $output_dir/$report
@@ -895,19 +939,16 @@ if [[ $mode = "dual" ]] ; then
           echo -e "\nHint: Suspicious malfind processes were dumped to disk, and can be reversed as normal or uploaded to VirusTotal." >> $output_dir/$report
         fi
         if [[ $plugin = "drivermodule" ]] ; then
-          echo -e "\nHint: Drivers without a module (UNKNOWN) should be considered as suspicious. Use moddump -b to dump suspicious drivers from memory to disk." >> $output_dir/$report
+          echo -e "\nHint: Use moddump -b to dump suspicious drivers from memory to disk." >> $output_dir/$report
         fi
         if [[ $plugin = "driverscan" ]] ; then
           echo -e "\nHint: Drivers that have no associated service should be considered as suspicious. Use moddump -b to dump suspicious drivers from memory to disk." >> $output_dir/$report
         fi
-        if [[ $plugin = "psscan" ]] ; then
+        if [[ $plugin = "psxview" ]] ; then
           echo -e "\nHint: Use procexedump to dump suspcious processes from memory to disk." >> $output_dir/$report
         fi
         if [[ $plugin = "netscan" ]] ; then
           echo -e "\nHint: Translate suspicious IPs to domains using Google/VirusTotal, and search for the associated domains in memory strings." >> $output_dir/$report
-        fi
-        if [[ $plugin = "privs" ]] ; then
-          echo -e "\nHint: privs was run with the -s switch. It will only show the privileges that were not enabled by default." >> $output_dir/$report
         fi
         if [[ $plugin = "ssdt" ]] ; then
           echo -e "\nHint: Some rootkits manipulate SSDT entries to hide its files or registry entries from usermode." >> $output_dir/$report
@@ -920,9 +961,6 @@ if [[ $mode = "dual" ]] ; then
         fi
         if [[ $plugin = "messagehooks" ]] ; then
           echo -e "\nHint: messagehooks can detect hooks that attempt to catch user strokes." >> $output_dir/$report
-        fi
-        if [[ $plugin = "sessions" ]] ; then
-          echo -e "\nHint: sessions can unveal hidden processes." >> $output_dir/$report
         fi
       fi
     else
@@ -940,7 +978,7 @@ if [[ $mode = "dual" ]] ; then
   # display list of plugins hidden from report (verbose):
   echo -e "\n\nPlugins that were executed but are not included in the report above." >> $output_dir/$report
   echo -e "===========================================================================\n" >> $output_dir/$report
-  echo -e "filescan\nhandles\ngetsids\ndeskscan\ndlllist\nldrmodules\natoms\natomscan\nidt\ngdt\ntimers\ngditimers" >> $output_dir/$report
+  echo -e "filescan\nhandles\ngetsids\ndeskscan\ndlllist\nldrmodules\natoms\nsvcscan\natomscan\nidt\ngdt\ntimers\ngditimers" >> $output_dir/$report
 
   # add identified process anomalies to the report:
   if [[ $@ =~ "--malware-checks" ]] ; then
@@ -1008,7 +1046,9 @@ elif [[ $mode = "standalone" ]] ; then
       vol.py --profile=$profile -f $memory_image $plugin --silent &> $output_dir/$plugin/$plugin.txt
     elif [[ $plugin = "orphanthreads" ]]  ; then
       vol.py --profile=$profile -f $memory_image threads -F OrphanThread &> $output_dir/orphanthreads/orphanthreads.txt
-  elif [[ $plugin = "malfind" ]] ; then
+    elif [[ $plugin = "psxview" ]]  ; then
+      vol.py --profile=$profile -f $memory_image psxview -R &> $output_dir/psxview/psxview.txt
+    elif [[ $plugin = "malfind" ]] ; then
       mkdir $output_dir/$plugin/dump-dir
       vol.py --profile=$profile -f $memory_image $plugin -D $output_dir/$plugin/dump-dir &> $output_dir/$plugin/$plugin.txt
     else
@@ -1017,9 +1057,21 @@ elif [[ $mode = "standalone" ]] ; then
   done
   wait
 
-  ################################ PROCESS CHECKS ################################
   if [[ $@ =~ "--malware-checks" ]] ; then
     echo -e "Hunting for anomalies in $memory_image processes..."
+    touch $output_dir/tmpfolder/malware-checks.tmp
+
+    ################################ MALWARE CHECKS - NETWORK ################################
+
+    # compute unique IPs from netscan output:
+    cat $output_dir/netscan/netscan.txt | grep -o -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | sort | uniq | grep -v -E "127\.0\.0\.1|0\.0\.0\.0" > $output_dir/tmpfolder/netscan-uniq-ips.tmp
+    if [[ -s $output_dir/tmpfolder/netscan-uniq-ips.tmp ]]; then
+      echo -e "\n\nUnique IP addresses from netscan output." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+      cat $output_dir/tmpfolder/netscan-uniq-ips.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+    fi
+
+    ################################ MALWARE CHECKS - PROCESS CHECKS ################################
    
     # verify PID of System process = 4
     cat $output_dir/psscan/psscan.txt | grep " System " | tr -s ' ' | cut -d " " -f 3 > $output_dir/tmpfolder/system-pids.tmp
@@ -1165,7 +1217,7 @@ elif [[ $mode = "standalone" ]] ; then
     # verify if any processes have suspicious l33t names:
     cat $output_dir/psscan/psscan.txt | grep -E -i $l33t_process_name > $output_dir/tmpfolder/suspicious_process.tmp
     if [[ -s $output_dir/tmpfolder/suspicious_process.tmp ]]; then
-      echo -e "\n\nProcesses with suspicious names." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "\n\nProcess with suspicious name." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '2p' $output_dir/psscan/psscan.txt >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '3p' $output_dir/psscan/psscan.txt >> $output_dir/tmpfolder/malware-checks.tmp
@@ -1256,37 +1308,7 @@ elif [[ $mode = "standalone" ]] ; then
       cat $output_dir/tmpfolder/remote_shares.tmp >> $output_dir/tmpfolder/malware-checks.tmp
     fi
 
-    # analyse import tables in some processes:
-    plugin=impscan
-    cat $output_dir/malfind/malfind.txt | grep "Address:" | cut -d ' ' -f 4 | sort | uniq > $output_dir/tmpfolder/procids.tmp
-    tail -n +4 $output_dir/psscan/psscan.txt | grep -v -E -i $usual_processes | tr -s ' ' | cut -d " " -f 3 | sort | uniq >> $output_dir/tmpfolder/procids.tmp
-    cat $output_dir/tmpfolder/procids.tmp | sort | uniq > $output_dir/tmpfolder/pids.tmp
-
-    while read pid; do
-      vol.py --profile=$profile -f $memory_image $plugin -p $pid &> $output_dir/tmpfolder/$pid-imports.tmp
-      process=`tail -n +4 $output_dir/psscan/psscan.txt | tr -s ' ' | cut -d ' ' -f 1-3 | grep -i " "$pid | cut -d ' ' -f 2 | sort | uniq`
-      # searching for anti debug import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $anti_debug_imports > $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # search for password extraction import functions 
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $password_extract_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # searching for web request import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $web_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # searching for service import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $service_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # searching for process injection import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $process_injection_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # searching for uac bypass import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $uac_bypass_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      # searching for misc import functions
-      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $misc_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
-      if [[ -s $output_dir/tmpfolder/$pid-imports-susp.tmp ]] ; then
-        echo -e "\n\nSuspicious imports in process $process." >> $output_dir/tmpfolder/malware-checks.tmp
-        echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
-        sed -n '2p' $output_dir/tmpfolder/$pid-imports.tmp >> $output_dir/tmpfolder/malware-checks.tmp
-        sed -n '3p' $output_dir/tmpfolder/$pid-imports.tmp >> $output_dir/tmpfolder/malware-checks.tmp
-        cat $output_dir/tmpfolder/$pid-imports-susp.tmp >> $output_dir/tmpfolder/malware-checks.tmp
-      fi
-    done < $output_dir/tmpfolder/pids.tmp
+    ################################ MALWARE CHECKS - DLLs ################################
 
     # find new dlls (atoms):
     cat $output_dir/atoms/atoms.txt | grep -i -E ".dll$"  >> $output_dir/tmpfolder/atoms.tmp
@@ -1311,7 +1333,7 @@ elif [[ $mode = "standalone" ]] ; then
     # highlight hidden DLLs (ldrmodules):
     cat $output_dir/ldrmodules/ldrmodules.txt | grep "False" | grep -E -v -i "system32|explorer.exe|iexplore.exe|.fon$" | sort | uniq > $output_dir/tmpfolder/ldrmodules.tmp
     if [[ -s $output_dir/tmpfolder/ldrmodules.tmp ]] ; then
-      echo -e "\n\nHidden ldrmodules entries." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "\n\nSuspicious ldrmodules entries." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '2p' $output_dir/ldrmodules/ldrmodules.txt >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '3p' $output_dir/ldrmodules/ldrmodules.txt >> $output_dir/tmpfolder/malware-checks.tmp
@@ -1337,10 +1359,20 @@ elif [[ $mode = "standalone" ]] ; then
       cat $output_dir/tmpfolder/ldrmodule_hollow.tmp >> $output_dir/tmpfolder/malware-checks.tmp
     fi
 
+    ################################ MALWARE CHECKS - FILES ################################
+
+    # find DLLs/EXES loaded from temp folders (dlllist):
+    cat $output_dir/dlllist/dlllist.txt | grep -E -i "TMP|TEMP|AppData" | sort | uniq > $output_dir/tmpfolder/dlllist_temp.tmp
+    if [[ -s $output_dir/tmpfolder/dlllist_temp.tmp ]] ; then
+      echo -e "\n\nDLLs/EXEs loaded from temp folders." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+      cat $output_dir/tmpfolder/dlllist_temp.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+    fi
+
     # find hidden DLLs/EXEs (ldrmodules):
     cat $output_dir/ldrmodules/ldrmodules.txt | grep -E -i "False  False  False" | sort | uniq | grep -E -i ".dll$|.exe$" > $output_dir/tmpfolder/ldrmodule_hidden.tmp
     if [[ -s $output_dir/tmpfolder/ldrmodule_hidden.tmp ]] ; then
-      echo -e "\n\nDLLs/EXE hidden from ldrmodules." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "\n\nDLLs/EXEs hidden from ldrmodules." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '2p' $output_dir/ldrmodules/ldrmodules.txt >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '3p' $output_dir/ldrmodules/ldrmodules.txt >> $output_dir/tmpfolder/malware-checks.tmp
@@ -1358,7 +1390,7 @@ elif [[ $mode = "standalone" ]] ; then
     # highlight binaries loaded from TEMP folders:
     cat $output_dir/envars/envars.txt | grep -i "TEMP" > $output_dir/tmpfolder/temp_envars.tmp
     if [[ -s $output_dir/tmpfolder/temp_envars.tmp ]]; then
-      echo -e "\n\nPossible binaries loaded from TEMP folders." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "\n\nPossible binaries loaded from TEMP folders (envars)." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '2p' $output_dir/envars/envars.txt >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '3p' $output_dir/envars/envars.txt >> $output_dir/tmpfolder/malware-checks.tmp
@@ -1368,7 +1400,7 @@ elif [[ $mode = "standalone" ]] ; then
     # find interesting executables (dlllist):
     cat $output_dir/dlllist/dlllist.txt | grep "Command line" | grep -E -v -i "system32|explorer.exe|iexplore.exe" | sed -e 's/Command line : //' | sort | uniq > $output_dir/tmpfolder/execs.tmp
     if [[ -s $output_dir/tmpfolder/execs.tmp ]] ; then
-      echo -e "\n\nInteresting executables (from dlllist)." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "\n\nInteresting executables (dlllist)." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
       cat $output_dir/tmpfolder/execs.tmp >> $output_dir/tmpfolder/malware-checks.tmp
     fi
@@ -1381,10 +1413,68 @@ elif [[ $mode = "standalone" ]] ; then
       cat $output_dir/tmpfolder/ads.tmp >> $output_dir/tmpfolder/malware-checks.tmp
     fi
 
+    ################################ MALWARE CHECKS - MISC ################################
+
+    # find interresting entries in hosts file
+    mkdir $output_dir/tmpfolder/hosts
+    qaddress=$(cat $output_dir/filescan/filescan.txt | grep -i -E "etc\\\\hosts$" | tr -s ' ' | cut -d ' ' -f 1)
+    if [[ ! -z "$qaddress" ]] ; then 
+      vol.py --profile=$profile -f $memory_image dumpfiles -Q $qaddress -D $output_dir/tmpfolder/hosts --name &> /dev/null 
+      strings $output_dir/tmpfolder/hosts/* > $output_dir/tmpfolder/hosts.tmp  &> /dev/null
+    fi
+    if [[ -s $output_dir/tmpfolder/hosts.tmp ]] ; then
+      cat $output_dir/tmpfolder/hosts.tmp | grep -v "^#"  > $output_dir/tmpfolder/interresting-hosts.tmp
+      if [[ -s $output_dir/tmpfolder/interresting-hosts.tmp ]] ; then
+        echo -e "\n\nEntries in hosts files." >> $output_dir/tmpfolder/malware-checks.tmp
+        echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+        cat $output_dir/tmpfolder/interresting-hosts.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+      fi
+    fi
+
+    ################################ MALWARE CHECKS - PERSISTENCE ################################
+
+    echo -e "Searching for persistence artifacts..."
+
+    # highlight temp folders appearing in services:
+    cat $output_dir/svcscan/svcscan.txt | grep -i -E "TMP|TEMP|AppData" > $output_dir/tmpfolder/svcscan_temp.tmp
+    if [[ -s $output_dir/tmpfolder/svcscan_temp.tmp ]]; then
+      echo -e "\n\nTemp folders appearing in services." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+      cat $output_dir/tmpfolder/svcscan_temp.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+    fi
+
+    # dump registry keys commonly used for persistence:
+    mkdir $output_dir/printkey
+    plugin="printkey"
+    for key in "Microsoft\Windows\CurrentVersion\RunOnce" "Microsoft\Windows\CurrentVersion\Run" "Software\Microsoft\Windows\CurrentVersion\RunOnce" "Software\Microsoft\Windows\CurrentVersion\Run" "Microsoft\Windows\CurrentVersion\RunServices" "Microsoft\Windows\CurrentVersion\RunServicesOnce" "Software\Microsoft\Windows NT\CurrentVersion\Winlogon" "Microsoft\Security Center\Svc" ; do
+      vol.py --profile=$profile -f $memory_image $plugin -K $key &>> $output_dir/tmpfolder/printkey.tmp
+      tr < $output_dir/tmpfolder/printkey.tmp -d '\000' > $output_dir/printkey/printkey.txt
+    done
+
+    # highlight temp folders appearing in dumped registry keys:
+    cat $output_dir/printkey/printkey.txt | grep -i -E "TMP|TEMP|AppData" > $output_dir/tmpfolder/printkey_temp.tmp
+    if [[ -s $output_dir/tmpfolder/printkey_temp.tmp ]]; then
+      echo -e "\n\nTemp folders appearing in dumped registry keys." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+      cat $output_dir/tmpfolder/printkey_temp.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+    fi
+
+    ################################ MALWARE CHECKS - KERNEL ################################
+
+    # find keylogger traces in messagehooks:
+    cat $output_dir/messagehooks/messagehooks.txt | grep -i "KEYBOARD" > $output_dir/tmpfolder/keyboard_messagehooks.tmp
+    if [[ -s $output_dir/tmpfolder/keyboard_messagehooks.tmp ]]; then
+      echo -e "\n\nKeylogger traces (messagehooks)." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+      sed -n '2p' $output_dir/messagehooks/messagehooks.txt >> $output_dir/tmpfolder/malware-checks.tmp
+      sed -n '3p' $output_dir/messagehooks/messagehooks.txt >> $output_dir/tmpfolder/malware-checks.tmp
+      cat $output_dir/tmpfolder/keyboard_messagehooks.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+    fi
+
     # find unusual timers:
     tail -n +4 $output_dir/timers/timers.txt | grep -E -v -i "ataport.SYS|ntoskrnl.exe|NETIO.SYS|storport.sys|afd.sys|cng.sys|dfsc.sys|discache.sys|HTTP.sys|luafv.sys|ndis.sys|Ntfs.sys|rdbss.sys|rdyboost.sys|spsys.sys|srvnet.sys|srv.sys|tcpip.sys|usbccgp.sys" | sort | uniq >> $output_dir/tmpfolder/timers.tmp
     if [[ -s $output_dir/tmpfolder/timers.tmp ]] ; then
-      echo -e "\n\nSelected timers for review." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "\n\ntimers." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '2p' $output_dir/timers/timers.txt >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '3p' $output_dir/timers/timers.txt >> $output_dir/tmpfolder/malware-checks.tmp
@@ -1397,7 +1487,7 @@ elif [[ $mode = "standalone" ]] ; then
     # find unusual gditimers:
     tail -n +4 $output_dir/gditimers/gditimers.txt | grep -E -v -i "dllhost.exe|explorer.exe|csrss.exe" | sort | uniq >> $output_dir/tmpfolder/gditimers.tmp
     if [[ -s $output_dir/tmpfolder/gditimers.tmp ]] ; then
-      echo -e "\n\nSelected gditimers for review." >> $output_dir/tmpfolder/malware-checks.tmp
+      echo -e "\n\ngditimers." >> $output_dir/tmpfolder/malware-checks.tmp
       echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '2p' $output_dir/gditimers/gditimers.txt >> $output_dir/tmpfolder/malware-checks.tmp
       sed -n '3p' $output_dir/gditimers/gditimers.txt >> $output_dir/tmpfolder/malware-checks.tmp
@@ -1471,20 +1561,9 @@ elif [[ $mode = "standalone" ]] ; then
       cat $output_dir/tmpfolder/orphanthreads.tmp >> $output_dir/tmpfolder/malware-checks.tmp
     fi
 
-  ################################ REGISTRY CHECKS ################################
-    echo -e "Dumping registry keys commonly used for persistence..."
+    ################################ MALWARE CHECKS - STRINGS ################################
 
-    # dump registry keys commonly used for persistence:
-    mkdir $output_dir/printkey
-    plugin="printkey"
-    for key in "Microsoft\Windows\CurrentVersion\RunOnce" "Microsoft\Windows\CurrentVersion\Run" "Software\Microsoft\Windows\CurrentVersion\RunOnce" "Software\Microsoft\Windows\CurrentVersion\Run" "Microsoft\Windows\CurrentVersion\RunServices" "Microsoft\Windows\CurrentVersion\RunServicesOnce" "Software\Microsoft\Windows NT\CurrentVersion\Winlogon" "Microsoft\Security Center\Svc" ; do
-      vol.py --profile=$profile -f $memory_image $plugin -K $key &>> $output_dir/tmpfolder/printkey.tmp
-      tr < $output_dir/tmpfolder/printkey.tmp -d '\000' > $output_dir/printkey/printkey.txt
-    done
-
-  ################################ STRING CHECKS ################################
     echo -e "Hunting for badness in memory strings..."
-    touch $output_dir/tmpfolder/malware-checks.tmp
 
     # dump unusual processes to disk
     tail -n +4 $output_dir/psscan/psscan.txt | grep -v -i -E $usual_processes | tr -s ' ' | cut -d ' ' -f 1 > $output_dir/tmpfolder/offsets_to_dmp.tmp
@@ -1535,6 +1614,41 @@ elif [[ $mode = "standalone" ]] ; then
         grep -E -i $regex_str $output_dir/strings/process-strings-vol.txt | sort | uniq >> $output_dir/tmpfolder/malware-checks.tmp
       fi
     done
+
+    ################################ MALWARE CHECKS - IMPORTS ################################
+
+    # analyse import tables in some processes:
+    plugin=impscan
+    cat $output_dir/malfind/malfind.txt | grep "Address:" | cut -d ' ' -f 4 | sort | uniq > $output_dir/tmpfolder/procids.tmp
+    tail -n +4 $output_dir/psscan/psscan.txt | grep -v -E -i $usual_processes | tr -s ' ' | cut -d " " -f 3 | sort | uniq >> $output_dir/tmpfolder/procids.tmp
+    cat $output_dir/tmpfolder/procids.tmp | sort | uniq > $output_dir/tmpfolder/pids.tmp
+
+    while read pid; do
+      vol.py --profile=$profile -f $memory_image $plugin -p $pid &> $output_dir/tmpfolder/$pid-imports.tmp
+      process=`tail -n +4 $output_dir/psscan/psscan.txt | tr -s ' ' | cut -d ' ' -f 1-3 | grep -i " "$pid | cut -d ' ' -f 2 | sort | uniq`
+      # searching for anti debug import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $anti_debug_imports > $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # search for password extraction import functions 
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $password_extract_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # searching for web request import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $web_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # searching for service import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $service_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # searching for process injection import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $process_injection_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # searching for uac bypass import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $uac_bypass_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      # searching for misc import functions
+      cat $output_dir/tmpfolder/$pid-imports.tmp | grep -i -E $misc_imports >> $output_dir/tmpfolder/$pid-imports-susp.tmp
+      if [[ -s $output_dir/tmpfolder/$pid-imports-susp.tmp ]] ; then
+        echo -e "\n\nSuspicious imports in process $process." >> $output_dir/tmpfolder/malware-checks.tmp
+        echo -e "===========================================================================\n" >> $output_dir/tmpfolder/malware-checks.tmp
+        sed -n '2p' $output_dir/tmpfolder/$pid-imports.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+        sed -n '3p' $output_dir/tmpfolder/$pid-imports.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+        cat $output_dir/tmpfolder/$pid-imports-susp.tmp >> $output_dir/tmpfolder/malware-checks.tmp
+      fi
+    done < $output_dir/tmpfolder/pids.tmp
+
   fi
 
   ################################ REPORT CREATION ################################
