@@ -22,9 +22,7 @@ Use Directions
 VolDiff will save the output of a selection of Volatility plugins for both memory images (baseline and infected), then it will create a report to highlight notable changes (new processes, network connections, injected code, drivers etc).
 
 VolDiff can also be used to analyse a single memory image:
-<pre>
-./VolDiff.sh path/to/image.vmem profile [options] 
-</pre>
+<pre>./VolDiff.sh path/to/image.vmem profile [options]</pre>
 
 Automated Malware Checks
 -------------------------
