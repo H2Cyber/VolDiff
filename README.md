@@ -104,4 +104,4 @@ VolDiff is a free and open source software.
 FAQ
 -----
 
-Please refer to the VolDiff [Home wiki](https://github.com/aim4r/VolDiff/wiki) for FAQ.
+Please refer to the VolDiff [home wiki](https://github.com/aim4r/VolDiff/wiki) for FAQ.
