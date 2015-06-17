@@ -29,4 +29,7 @@ If a single memory image of an potentially infected system is available, use the
 
 `python VolDiff.py path/to/image.vmem profile --malware-checks`
 
-Please refer to the VolDiff [wiki pages](https://github.com/aim4r/VolDiff/wiki) for more details.
+FAQ
+-----
+
+Please refer to the VolDiff [Home wiki](https://github.com/aim4r/VolDiff/wiki) for FAQ.
