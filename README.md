@@ -103,9 +103,3 @@ IoRegisterShutdownNotification       0x854a28ca UNKNOWN
 
 </pre>
 
-Licence
---------
-Free open source software. 
-
-Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
-
