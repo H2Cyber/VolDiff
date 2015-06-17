@@ -29,6 +29,11 @@ If a single memory image of an potentially infected system is available, use the
 
 `python VolDiff.py path/to/image.vmem profile --malware-checks`
 
+License
+--------
+
+VolDiff is a free and open source software.
+
 FAQ
 -----
 
