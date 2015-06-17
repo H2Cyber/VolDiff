@@ -103,3 +103,5 @@ IoRegisterShutdownNotification       0x854a28ca UNKNOWN
 
 </pre>
 
+
+Refer to the VolDiff [wiki pages](https://github.com/aim4r/VolDiff/wiki) for more details.
