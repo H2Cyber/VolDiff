@@ -2,37 +2,33 @@
 VolDiff: Malware Memory Footprint Analysis
 ==========================================
 
-VolDiff is a bash script that runs [Volatility](https://github.com/volatilityfoundation/volatility) plugins against memory images captured before and after malware execution. It creates a report that highlights system changes based on memory (RAM) analysis.
+VolDiff is a Python script that leverages the [Volatility](https://github.com/volatilityfoundation/volatility) framework to identify malware threats on Windows 7 memory images.
 
-VolDiff can additionally be used on a single memory image to automate Volatility plugin execution, and hunt for malicious patterns.
+VolDiff can be used to run a collection of Volatility plugins against memory images captured before and after malware execution. It creates a report that highlights system changes based on memory (RAM) analysis.
+
+VolDiff can also be used against a single Windows memory image to automate Volatility plugin execution, and hunt for malicious patterns.
 
 Use Directions
 ----------------
+If a single memory image of an potentially infected system is available, use the following command to analyse it using VolDiff:
+
+`python VolDiff.py path/to/image.vmem profile --malware-checks`
+
+The `--malware-checks` option instructs VolDiff to perform a number of checks such as process parent/child relationships, unusual loaded DLLs, suspicious imports, malicious drivers and much more. VolDiff will save the output of a selection of Volatility plugins for the memory images, then it will create a report to highlight any identified indicators of compromise. 
+
+If a malware sample is available (such as a malicious executable, a PDF or MS Office file), then VolDiff can be used to highlight the system changes introduced by the sample:
 
 1. Capture a memory dump of a clean Windows system and save it as "baseline.vmem". This image will serve as a baseline for the analysis.
 
-2. Execute your malware sample on the same system, then take a second memory dump and save it as "infected.vmem".
+2. Execute the malware sample on the same system (usual [precautions](https://zeltser.com/vmware-network-isolation-for-malware-analysis/) apply), then capture a second memory dump and save it as "infected.vmem".
 
-3. Run VolDiff:
-<pre>
-./VolDiff.sh path/to/baseline.vmem path/to/infected.vmem profile [options]
-</pre>
-"profile" should be "Win7SP0x86" or "Win7SP1x64" etc.
+3. Run VolDiff.py using the following options:
 
-VolDiff will save the output of a selection of Volatility plugins for both memory images (baseline and infected), then it will create a report to highlight notable changes (new processes, network connections, injected code, drivers etc).
+`python VolDiff.py path/to/baseline.vmem path/to/infected.vmem profile --malware-checks`
 
-VolDiff can also be used to analyse a single memory image:
-<pre>./VolDiff.sh path/to/image.vmem profile [options]</pre>
+`profile` should be `Win7SP0x86` or `Win7SP1x64` etc.
 
-Automated Malware Checks
--------------------------
-The recommended option to use with VolDiff is `--malware-checks` , which checks process parent/child relationships, unusual loaded DLLs, suspicious imports, malicious drivers and much more.
-
-<pre>
-./VolDiff.sh [path/to/baseline.vmem] path/to/infected.vmem profile --malware-checks
-</pre>
-
-`--malware-checks` was tested and tailored for Windows 7 memory images.
+VolDiff will create a report to highlight notable changes (new processes, network connections, injected code, drivers etc), as well as any identified indicators of compromise.
 
 
 Sample Output
@@ -107,16 +103,9 @@ IoRegisterShutdownNotification       0x854a28ca UNKNOWN
 
 </pre>
 
-Inspiration
-------------
-This work was initially inspired by Andrew Case ([@attrc](https://twitter.com/attrc)) talk on [analyzing the sophisticated Careto malware sample with memory forensics] (http://2014.video.sector.ca/video/110388398 "analyzing the sophisticated Careto malware sample with memory forensics"). Kudos to [@attrc](https://twitter.com/attrc) and all the Volatility development team for creating and maintaining the greatest memory forensic framework out there!
-
 Licence
 --------
 Free open source software. 
 
 Tested using Volatility 2.4 (vol.py) and Windows 7 memory images.
 
-Feedback and Bugs
--------------------
-Please submit feedback, report bugs, or send ideas that you want to see implemented to [@aim4r](https://twitter.com/aim4r), houcem.hachicha[@]gmail.com or [Github](https://github.com/aim4r/VolDiff/issues).
