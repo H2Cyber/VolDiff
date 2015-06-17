@@ -10,11 +10,6 @@ VolDiff can also be used against a single Windows memory image to automate Volat
 
 Use Directions
 ----------------
-If a single memory image of an potentially infected system is available, use the following command to analyse it using VolDiff:
-
-`python VolDiff.py path/to/image.vmem profile --malware-checks`
-
-The `--malware-checks` option instructs VolDiff to perform a number of checks such as process parent/child relationships, unusual loaded DLLs, suspicious imports, malicious drivers and much more. VolDiff will save the output of a selection of Volatility plugins for the memory images, then it will create a report to highlight any identified indicators of compromise. 
 
 If a malware sample is available (such as a malicious executable, a PDF or MS Office file), then VolDiff can be used to highlight the system changes introduced by the sample:
 
@@ -28,6 +23,10 @@ If a malware sample is available (such as a malicious executable, a PDF or MS Of
 
 `profile` should be `Win7SP0x86` or `Win7SP1x64` etc.
 
-VolDiff will create a report to highlight notable changes (new processes, network connections, injected code, drivers etc), as well as any identified indicators of compromise.
+The `--malware-checks` option instructs VolDiff to perform a number of checks such as process parent/child relationships, unusual loaded DLLs, suspicious imports, malicious drivers and much more. VolDiff will save the output of a selection of Volatility plugins for the memory images, then it will create a report to highlight any identified indicators of compromise. 
+
+If a single memory image of an potentially infected system is available, use the following command to analyse it using VolDiff:
+
+`python VolDiff.py path/to/image.vmem profile --malware-checks`
 
 Please refer to the VolDiff [wiki pages](https://github.com/aim4r/VolDiff/wiki) for more details.
