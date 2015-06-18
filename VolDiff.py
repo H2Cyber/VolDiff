@@ -11,13 +11,19 @@ import difflib
 import shutil
 import re
 import string
+import simplejson
+import urllib
+import urllib2
+import hashlib
 from subprocess import Popen
 
 # VARIABLES ================================================================
-version = "2.0"
+version = "2.1"
 path_to_volatility = "vol.py"
 max_concurrent_subprocesses = 3
-output_threshold = 40
+diff_output_threshold = 100
+ma_output_threshold = 40
+vt_api_key = "473db868008cddb184e609ace3ca05de8e51f806e57eba74005aba2efa4a1e6e"  # the rate limit os 4 requests per IP per minute
 devnull = open(os.devnull, 'w')
 
 # volatility plugins to run:
@@ -267,7 +273,7 @@ def diff_files(path1, path2, diffpath):
 
 
 # REPORT CREATION ================================================================
-def report_plugin(plugin, header_lines=0):
+def report_plugin(plugin, header_lines=0, threshold=diff_output_threshold):
     report.write("\n\nNew %s entries." % plugin)
     report.write("\n==========================================================================================================================\n")
     if header_lines != 0:
@@ -275,8 +281,15 @@ def report_plugin(plugin, header_lines=0):
             for i in range(header_lines):
                 line = next(f, '').strip()
                 report.write(line + "\n")
+    line_counter = 0
     with open(output_dir + "/" + plugin + "/diff_" + plugin + ".txt") as diff:
-        report.write(diff.read())
+        for line in diff:
+            line_counter += 1
+            if line_counter < threshold:
+                report.write(line)
+            else:
+                report.write("\nWarning: too many new entries to report, output truncated!\n")
+                break
     return
 
 
@@ -364,7 +377,7 @@ def anomaly_search_inverted(plugin, regex_to_exclude, ignorecase='yes', regex_to
     return match_list
 
 
-def report_anomalies(headline, anomaly_list, delim="=", plugin="", header_lines=0, threshold=output_threshold):
+def report_anomalies(headline, anomaly_list, delim="=", plugin="", header_lines=0, threshold=ma_output_threshold):
     if len(anomaly_list) != 0:
         report.write("\n\n%s" % headline)
         if delim == "=":
@@ -465,6 +478,8 @@ def find_ips_domains_emails(plugin):
 
 def get_pids(procname, plugin="psscan"):
     pids = []
+    if procname == "":
+        return pids
     f = open_full_plugin(plugin, 2)
     for line in f:
         if re.search(' ' + procname + ' ', line, re.IGNORECASE):
@@ -717,14 +732,18 @@ def get_malfind_pids():
     return malfind_pids
 
 
-def get_malfind_injections(pid):
+def get_malfind_injections(pid, m="dual"):
     malfind_injections = []
     f = open_diff_plugin("malfind", 0)
+    if m == "dual":
+        n = 6
+    else:
+        n = 7
     for line in f:
         if re.search("Pid: " + str(pid) + " ", line):
             malfind_injections.append("\n")
             malfind_injections.append(line)
-            for i in xrange(7):
+            for i in xrange(n):
                 line = next(f, '')
                 malfind_injections.append(line)
     f.close()
@@ -871,8 +890,7 @@ def analyse_strings(pid):
         if len(susp_strings) > 0:
             if not hit:
                 report.write("\n\nSuspicious strings from process memory.")
-                report.write(
-                    "\n--------------------------------------------------------------------------------------------------------------------------\n")
+                report.write("\n--------------------------------------------------------------------------------------------------------------------------\n")
                 hit = True
             report_string = ""
             susp_strings = sorted(set(susp_strings))
@@ -897,8 +915,8 @@ def check_expected_parent(pid):
     if fl:
         actual_parent = get_procname(get_parent_pids_of([pid, ])[0], "psscan")
         if actual_parent.lower() != parent.lower():
-            j = get_associated_process_lines_ppids(get_pids(actual_parent))
-            l = get_associated_process_lines_ppids(get_pids(expected_parent))
+            j = get_associated_process_lines_pids(get_pids(actual_parent))
+            l = get_associated_process_lines_pids(get_pids(expected_parent))
             k = get_associated_process_lines_pids([pid, ])
             report_anomalies("Unexpected parent process (" + actual_parent + " instead of " + expected_parent + "):", k + j + l, '-', "psscan", 2)
 
@@ -919,6 +937,46 @@ def get_raw_sockets(pid):
         if re.sub(' +', ' ', raw_socket).split(' ')[1] == pid:
             raw_sockets_to_report.append(raw_socket)
     return raw_sockets_to_report
+
+
+def get_md5(pid):
+    md5 = ""
+    dump_folder = tmpfolder + str(pid) + "/"
+    filelist = os.listdir(dump_folder)
+    for f in filelist:
+        if f == "executable." + str(pid) + ".exe":
+            md5 = hashlib.md5(open(dump_folder + f).read()).hexdigest()
+            break
+    return md5
+
+
+def report_virustotal_md5_results(md5, api):
+    url = "https://www.virustotal.com/vtapi/v2/file/report"
+    parameters = {"resource": md5, "apikey": api}
+    data = urllib.urlencode(parameters)
+    req = urllib2.Request(url, data)
+    response_dict = {}
+    network_error = False
+    try:
+        response = urllib2.urlopen(req)
+        json = response.read()
+        if json != "":
+            response_dict = simplejson.loads(json)
+    except urllib2.URLError:
+        network_error = True
+    if not network_error:
+        report.write("\n\nVirusTotal scan results:")
+        report.write("\n--------------------------------------------------------------------------------------------------------------------------\n")
+        report.write("MD5 value: " + md5 + "\n")
+        if "response_code" in response_dict:
+            if response_dict["response_code"] == 1:
+                report.write("VirusTotal scan date: " + str(response_dict["scan_date"]) + "\n")
+                report.write("VirusTotal engine detections: " + str(response_dict["positives"]) + "/" + str(response_dict["total"]) + "\n")
+                report.write("Link to VirusTotal report: " + str(response_dict["permalink"]) + "\n")
+            else:
+                report.write("Could not find VirusTotal scan results for the MD5 value above.\n")
+        else:
+            report.write("VirusTotal request rate limit reached, could not retrieve results.\n")
 
 
 def main():
@@ -1188,8 +1246,12 @@ def main():
                         for mutant in mutants:
                             report.write(mutant)
 
+            # ensuring malfind output is completely reported
+            elif plugin == "malfind":
+                report_plugin(plugin, 0, 500)
+
             # processing plugins that don't need output formatting:
-            elif plugin == "devicetree" or plugin == "orphanthreads" or plugin == "cmdline" or plugin == "consoles" or plugin == "svcscan" or plugin == "driverirp" or plugin == "malfind" or plugin == "shellbags" or plugin == "iehistory" or plugin == "sessions" or plugin == "eventhooks":
+            elif plugin == "devicetree" or plugin == "orphanthreads" or plugin == "cmdline" or plugin == "consoles" or plugin == "svcscan" or plugin == "driverirp" or plugin == "shellbags" or plugin == "iehistory" or plugin == "sessions" or plugin == "eventhooks":
                 report_plugin(plugin)
 
             # processing other plugins:
@@ -1333,10 +1395,6 @@ def main():
         if ppid not in pids:
             l = get_associated_process_lines_ppids([ppid, ])
             report_anomalies("Parent process with PPID " + ppid + " is not listed in psscan output.", l, "=", "psscan", 2)
-            if ppid in pids_to_analyse:
-                pids_to_analyse[ppid] += ", not listed in psscan output"
-            else:
-                pids_to_analyse[ppid] = "not listed in psscan output"
     # verify processes are running in expected sessions:
     for process in session0_processes:
         process_pids = get_pids(process)
@@ -1344,7 +1402,7 @@ def main():
             session = get_session(pid)
             if session != '0':
                 l = get_associated_process_lines_pids([pid, ], "pslist")
-                report_anomalies("Process " + process + " is running in unexpected session (" + session + " instead of 0).", l, "=", "pslist", 2)
+                report_anomalies("Process " + process + " (" + str(pid) + ") is running in unexpected session (" + session + " instead of 0).", l, "=", "pslist", 2)
                 if pid in pids_to_analyse:
                     pids_to_analyse[pid] += ", running in an unusual session"
                 else:
@@ -1355,7 +1413,7 @@ def main():
             session = get_session(pid)
             if session != '1':
                 l = get_associated_process_lines_pids([pid, ], "pslist")
-                report_anomalies("Process " + process + " is running in unexpected session (" + session + " instead of 1).", l, "=", "pslist", 2)
+                report_anomalies("Process " + process + " (" + str(pid) + ") is running in unexpected session (" + session + " instead of 1).", l, "=", "pslist", 2)
                 if pid in pids_to_analyse:
                     pids_to_analyse[pid] += ", running in an unusual session"
                 else:
@@ -1652,6 +1710,11 @@ def main():
         report.write("\n\nAnalysis results for " + procname + " PID " + pid + " (" + pids_to_analyse[pid] + "):")
         report.write(
             "\n==========================================================================================================================")
+        # print VirusTotal scan results of exec MD5 hash
+        if vt_api_key != "":
+            susp_md5 = get_md5(pid)
+            if susp_md5 != "":
+                report_virustotal_md5_results(susp_md5, vt_api_key)
         # print psxview output for the process (psxview)
         l = get_associated_process_lines_pids([pid, ], "psxview")
         report_anomalies("Psxview results:", l, '-', "psxview", 2)
@@ -1680,7 +1743,7 @@ def main():
         l = get_associated_process_lines_pids(childs)
         report_anomalies("Child process(es):", l, '-', "psscan", 2)
         # print malfind injections (malfind)
-        malfind_injections = get_malfind_injections(pid)
+        malfind_injections = get_malfind_injections(pid, mode)
         report_anomalies("Code injection (malfind):", malfind_injections, '-')
         # print associated services (svcscan)
         susp_services = get_associated_services(pid)
