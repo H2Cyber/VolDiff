@@ -197,7 +197,7 @@ def print_help():
 def print_version():
     print ("This is a free software: you are free to change and redistribute it.")
     print ("There is no warranty, to the extent permitted by law.")
-    print ("Written by @aim4r. Report bugs to houcem.hachicha[@]gmail.com.")
+    print ("Written by @aim4r. Report bugs to voldiff[@]gmail.com.")
     sys.exit()
 
 
