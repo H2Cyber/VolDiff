@@ -19,4 +19,4 @@ See [this wiki page](https://github.com/aim4r/VolDiff/wiki/Memory-Analysis-of-Da
 
 Inspiration
 ------------
-This work was initially inspired by Andrew Case ([@attrc](https://twitter.com/attrc)) talk on [analyzing the sophisticated Careto malware sample with memory forensics] (http://2014.video.sector.ca/video/110388398 "analyzing the sophisticated Careto malware sample with memory forensics"). Kudos to [@attrc](https://twitter.com/attrc) and all the Volatility development team for creating and maintaining the greatest memory forensic framework out there!
+This work was initially inspired by Andrew Case ([@attrc](https://twitter.com/attrc)) talk on [analyzing the sophisticated Careto malware sample with memory forensics] (http://2014.video.sector.ca/video/110388398 "analyzing the sophisticated Careto malware sample with memory forensics"). Kudos to [@attrc](https://twitter.com/attrc) and all the [Volatility development team](https://github.com/aim4r/VolDiff/wiki#credits) for creating and maintaining the greatest memory forensic framework out there!
