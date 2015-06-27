@@ -10,11 +10,11 @@ VolDiff can also be used against a single Windows memory image to automate Volat
 
 Installation and use directions
 --------------------------------
-Please refer to the VolDiff [home wiki](https://github.com/aim4r/VolDiff/wiki) for details.
+Please refer to the VolDiff [home wiki](https://github.com/aim4r/VolDiff/wiki) for details. VolDiff has also been included in the [REMnux](https://remnux.org/) Linux malware analysis toolkit.
 
 Sample report
 --------------
-See [this wiki page](https://github.com/aim4r/VolDiff/wiki/Memory-Analysis-of-DarkComet-using-VolDiff) for a sample VolDiff analysis of a system infected with the [DarkComet](https://en.wikipedia.org/wiki/DarkComet) RAT.
+See [this wiki page](https://github.com/aim4r/VolDiff/wiki/Memory-Analysis-of-DarkComet-using-VolDiff) for a sample VolDiff analysis of a system infected with the [DarkComet](https://en.wikipedia.org/wiki/DarkComet) RAT, or [this blog post](http://malwology.com/2015/06/25/remnux-v6-for-malware-analysis-part-1-voldiff/?utm_content=buffere3751&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer) for example VolDiff use againt a malware Trojan. 
 
 
 Inspiration
