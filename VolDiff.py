@@ -18,7 +18,7 @@ import hashlib
 from subprocess import Popen
 
 # VARIABLES ================================================================
-version = "2.1"
+version = "2.1.1"
 path_to_volatility = "vol.py"
 max_concurrent_subprocesses = 3
 diff_output_threshold = 100
@@ -49,7 +49,7 @@ clipboard_imports = "OpenClipboard"
 process_injection_imports = "VirtualAllocEx|AllocateVirtualMemory|VirtualProtectEx|ProtectVirtualMemory|CreateProcess|LoadLibrary|LdrLoadDll|CreateToolhelp32Snapshot|QuerySystemInformation|EnumProcesses|WriteProcessMemory|WriteVirtualMemory|CreateRemoteThread|ResumeThread|SetThreadContext|SetContextThread|QueueUserAPC|QueueApcThread|WinExec|FindResource"
 uac_bypass_imports = "AllocateAndInitializeSid|EqualSid|RtlQueryElevationFlags|GetTokenInformation|GetSidSubAuthority|GetSidSubAuthorityCount"
 anti_debug_imports = "SetUnhandledExceptionFilter|CheckRemoteDebugger|DebugActiveProcess|FindWindow|GetLastError|GetWindowThreadProcessId|IsDebugged|IsDebuggerPresent|NtCreateThreadEx|NtGlobalFlags|NtSetInformationThread|OutputDebugString|pbIsPresent|Process32First|Process32Next|TerminateProcess|ThreadHideFromDebugger|UnhandledExceptionFilter|ZwQueryInformation|Sleep|GetProcessHeap"
-web_imports = "InternetReadFile|recvfrom|WSARecv|DeleteUrlCacheEntry|CreateUrlCacheEntry|HttpSendRequest|URLDownloadToFile|WSASocket|WSASend|WSARecv|WS2_32"
+web_imports = "InternetReadFile|recvfrom|WSARecv|DeleteUrlCacheEntry|CreateUrlCacheEntry|URLDownloadToFile|WSASocket|WSASend|WSARecv|WS2_32|InternetOpen|HTTPOpen|HTTPSend|InternetWrite|InternetConnect"
 listen_imports = "RasPortListen|RpcServerListen|RpcMgmtWaitServerListen|RpcMgmtIsServerListening"
 service_imports = "OpenService|CreateService|StartService|NdrClientCall2|NtLoadDriver"
 shutdown_imports = "ExitWindows"
@@ -103,7 +103,7 @@ registry_remote_control_regex = "Terminal Server|Realvnc"
 registry_firewall_regex = "firewall"
 registry_services_regex = "CurrentControlSet\\\services"
 registry_network_regex = "NetworkList|Tcpip"
-registry_autorun_regex = "CurrentVersion\\\Explorer|CurrentVersion\\\Run|CurrentVersion\\\Windows|Current Version\\\Policies\\\Explorer|CurrentVersion\\\Winlogon"
+registry_autorun_regex = "CurrentVersion\\\Explorer|CurrentVersion\\\Run|CurrentVersion\\\Windows|Current Version\\\Policies\\\Explorer|CurrentVersion\\\Winlogon|Shell Extensions"
 registry_command_processor_regex = "Command Processor"
 registry_crypto_regex = "CRYPTOGRAPHY"
 registry_tracing_regex = "TRACING"
@@ -405,25 +405,6 @@ def report_anomalies(headline, anomaly_list, delim="=", plugin="", header_lines=
         for line in anomaly_list_to_report:
             report.write(line)
     return
-
-
-def list_cleanup(input_list, redundant_delim, i, space='yes', sort='yes', uniq='yes'):
-    clean_list = []
-    for entry in input_list:
-        if space == 'yes':
-            element = redundant_delim.join((re.sub(redundant_delim + '+', redundant_delim, entry).split(redundant_delim)[i:]))
-            if element != '\n' and element != '' and element != ' ':
-                clean_list.append(element)
-        else:
-            element = redundant_delim.join((re.sub(redundant_delim + '+', redundant_delim, entry).split(redundant_delim)[i]))
-            if element != '\n' and element != '' and element != ' ':
-                clean_list.append(element)
-    if sort == "yes":
-        clean_list = sorted(clean_list)
-    if uniq == "yes":
-        clean_list = set(clean_list)
-    return clean_list
-
 
 def extract_substrings(input_list, regex):
     extracted_list = []
@@ -777,7 +758,7 @@ def analyse_registry(pid):
                 registry_to_report.append(b)
         if len(registry_to_report) > 0:
             if not rhit:
-                report.write("\n\nInteresting registry handles.")
+                report.write("\n\nInteresting registry handles:")
                 report.write(
                     "\n--------------------------------------------------------------------------------------------------------------------------\n")
                 rhit = True
@@ -823,7 +804,7 @@ def analyse_imports(pid):
                         susp_functions.append(re.sub(' +', ' ', function).split(' ')[3])
             if len(susp_functions) > 0:
                 if not hit:
-                    report.write("\n\nInteresting imports.")
+                    report.write("\n\nInteresting imports:")
                     report.write(
                         "\n--------------------------------------------------------------------------------------------------------------------------\n")
                     hit = True
@@ -889,7 +870,7 @@ def analyse_strings(pid):
                         susp_strings.append(i)
         if len(susp_strings) > 0:
             if not hit:
-                report.write("\n\nSuspicious strings from process memory.")
+                report.write("\n\nSuspicious strings from process memory:")
                 report.write("\n--------------------------------------------------------------------------------------------------------------------------\n")
                 hit = True
             report_string = ""
@@ -1499,8 +1480,12 @@ def main():
     # Prefetch artifacts (mftparser): [DUAL ONLY]
     if mode == "dual":
         prefetch_files = anomaly_search("mftparser", ".pf$", 'yes')
-        prefetch_files = list_cleanup(prefetch_files, ' ', 12, "yes", "yes", "yes")
-        report_anomalies("Prefetch artifacts (mftparser).", prefetch_files)
+        prefetch_files_to_report = []
+        for entry in prefetch_files:
+            pf = ' '.join((re.sub(' +', ' ', entry).split(' ')[12:]))
+            if pf != "":
+                prefetch_files_to_report.append(pf)
+        report_anomalies("Prefetch artifacts (mftparser).", prefetch_files_to_report)
     # Suspicious dlls/executables (dlllist) - loaded from temp folders, unusual new (DUAL ONLY), etc:
     temp_dlls = anomaly_search("dlllist", temp_filepath, 'yes')
     temp_dlls = extract_substrings(temp_dlls, temp_filepath)
@@ -1544,11 +1529,15 @@ def main():
         suspicious_files1 = anomaly_search("filescan", susp_filepath, 'yes', "\.db$|\.lnk$|\.ini$|\.log$", "diff")
         suspicious_files2 = anomaly_search("filescan", susp_extensions_regex, 'yes', "suspend-vm-default\.bat")
         suspicious_files = suspicious_files1 + suspicious_files2
-        suspicious_files = list_cleanup(suspicious_files, ' ', 4, "yes", "yes", "yes")
     else:
         suspicious_files = anomaly_search("filescan", susp_extensions_regex, 'yes')
-        suspicious_files = list_cleanup(suspicious_files, ' ', 4, "yes", "yes", "yes")
-    report_anomalies("Interesting files on disk (filescan).", suspicious_files)
+    suspicious_files_to_report = []
+    for entry in suspicious_files:
+        en = ' '.join((re.sub(' +', ' ', entry).split(' ')[4:]))
+        if en != "":
+            suspicious_files_to_report.append(en)
+    suspicious_files_to_report = sorted(set(suspicious_files_to_report))
+    report_anomalies("Interesting files on disk (filescan).", suspicious_files_to_report, "=", "filescan", 0, 100)
     # Alternate Data Stream (ADS) files (mftparser):
     ads_files = anomaly_search("mftparser", "DATA ADS", 'yes', "Bad$|Max$")
     report_anomalies("Alternate Data Stream (ADS) files (mftparser).", ads_files)
