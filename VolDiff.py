@@ -302,7 +302,7 @@ def open_report(report_path):
         p = Popen(['open', report_path], stdout=devnull, stderr=devnull)
         p.wait()
     elif os.name == 'nt':
-        p = Popen(['start', report_path], stdout=devnull, stderr=devnull)
+        p = Popen(['cmd','/c','start', report_path], stdout=devnull, stderr=devnull) # cmd /c start [filename]
         p.wait()
 
 
@@ -1022,6 +1022,8 @@ def main():
     # CREATE FOLDER TO STORE OUTPUT ================================================================
     starttime = time.time()
     output_dir = 'VolDiff_' + datetime.datetime.now().strftime("%d-%m-%Y_%H:%M")
+    if os.name == 'nt':
+      output_dir = 'VolDiff_' + datetime.datetime.now().strftime("%d-%m-%Y_%H%M") #Can't Name file/dir with :
     tmpfolder = output_dir + '/tmpfolder/'
     os.makedirs(tmpfolder)
 
@@ -1148,7 +1150,7 @@ def main():
         script_completion(starttime)
 
     # CREATE REPORT ================================================================
-    report = open(output_dir + "/VolDiff_Report.txt", 'wr')
+    report = open(output_dir + "/VolDiff_Report.txt", 'w') # Invalid mode ('wr')
 
     if mode == "dual":
         report.write("             _    ___ _  __  __ \n")
@@ -1257,7 +1259,10 @@ def main():
     # MALWARE CHECKS ================================================================
     if "--malware-checks" not in sys.argv:
         if mode == "standalone":
-            os.remove(output_dir + "/VolDiff_Report.txt")
+                try:
+                    os.remove(output_dir + "/VolDiff_Report.txt") # The process cannot access the file because it is being used by another process
+                except:
+                    pass          
         script_completion(starttime)
 
     # PRINT BANNERS ================================================================
