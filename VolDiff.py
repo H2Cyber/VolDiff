@@ -18,11 +18,11 @@ import hashlib
 from subprocess import Popen
 
 # VARIABLES ================================================================
-version = "2.1.2"
+version = "2.1.3"
 path_to_volatility = "vol.py"
 max_concurrent_subprocesses = 3
 diff_output_threshold = 100
-ma_output_threshold = 40
+ma_output_threshold = 60
 vt_api_key = "473db868008cddb184e609ace3ca05de8e51f806e57eba74005aba2efa4a1e6e"  # the rate limit os 4 requests per IP per minute
 devnull = open(os.devnull, 'w')
 
@@ -122,7 +122,7 @@ usual_processes = "sppsvc.exe|audiodg.exe|mscorsvw.exe|SearchIndexer|TPAutoConnS
 susp_filepath = "\\\ProgramData|\\\Recycle|\\\Windows\\\Temp|\\\Users\\\All|\\\Users\\\Default|\\\Users\\\Public|\\\ProgramData|AppData"
 temp_filepath = "\\\TMP|\\\TEMP|\\\AppData"
 # usual timers
-usual_timers = "ataport.SYS|ntoskrnl.exe|NETIO.SYS|storport.sys|afd.sys|cng.sys|dfsc.sys|discache.sys|HTTP.sys|luafv.sys|ndis.sys|Ntfs.sys|rdbss.sys|rdyboost.sys|spsys.sys|srvnet.sys|srv.sys|tcpip.sys|usbccgp.sys|netbt.sys|volsnap.sys|dxgkrnl.sys"
+usual_timers = "ataport.SYS|ntoskrnl.exe|NETIO.SYS|storport.sys|afd.sys|cng.sys|dfsc.sys|discache.sys|HTTP.sys|luafv.sys|ndis.sys|Ntfs.sys|rdbss.sys|rdyboost.sys|spsys.sys|srvnet.sys|srv.sys|tcpip.sys|usbccgp.sys|netbt.sys|volsnap.sys|dxgkrnl.sys|bowser.sys|fltmgr.sys"
 # usual gditimers
 usual_gditimers = "dllhost.exe|explorer.exe|csrss.exe"
 # usual ssdt
@@ -184,12 +184,12 @@ def print_voldiff_banner():
 def print_help():
     print ("Usage: ./VolDiff.py [BASELINE_IMAGE] INFECTED_IMAGE PROFILE [OPTIONS]")
     print ("\nOptions:")
-    print ("--help              display this help and exit")
-    print ("--version           display version information and exit")
-    print ("--dependencies      display information about script dependencies and exit")
-    print ("--malware-checks    hunt and report suspicious anomalies (slow, recommended)")
-    print ("--no-report         do not create a report")
-    print ("--output [dir]      custom tpath for analysis and report")
+    print ("--help                display this help and exit")
+    print ("--version             display version information and exit")
+    print ("--dependencies        display information about script dependencies and exit")
+    print ("--malware-checks      hunt and report suspicious anomalies (slow, recommended)")
+    print ("--output-dir [dir]    custom directory to store analysis results")
+    print ("--no-report           do not create a report")
     print ("\nTested using Volatility 2.4 (vol.py) on Windows 7 images.")
     sys.exit()
 
@@ -987,7 +987,10 @@ def main():
         print_version()
     elif "--dependencies" in sys.argv:
         print_dependencies()
-    check_enough_arguments_supplied(3)
+    if "--output-dir" in sys.argv:
+        check_enough_arguments_supplied(5)
+    else:
+        check_enough_arguments_supplied(3)
     if os.path.isfile(sys.argv[2]):
         mode = "dual"
         if os.path.isfile(sys.argv[1]):
@@ -1026,13 +1029,13 @@ def main():
     output_dir = 'VolDiff_' + datetime.datetime.now().strftime("%d-%m-%Y_%H:%M")
     if os.name == 'nt':
         output_dir = 'VolDiff_' + datetime.datetime.now().strftime("%d-%m-%Y_%H%M")  # can't name file/dir with :
-    # IF --OUTPUT IS USED, USE CUSTOM OUTPUT DIR ================================================================
     tmpval = False
     for arg in sys.argv:
-        if tmpval = True:
+        if tmpval:
             output_dir = arg
             tmpval = False
-        if arg == "--output": tmpval = True
+        if arg == "--output-dir":
+            tmpval = True
     tmpfolder = output_dir + '/tmpfolder/'
     os.makedirs(tmpfolder)
 
