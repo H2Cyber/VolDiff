@@ -189,6 +189,7 @@ def print_help():
     print ("--dependencies      display information about script dependencies and exit")
     print ("--malware-checks    hunt and report suspicious anomalies (slow, recommended)")
     print ("--no-report         do not create a report")
+    print ("--output [dir]      custom tpath for analysis and report")
     print ("\nTested using Volatility 2.4 (vol.py) on Windows 7 images.")
     sys.exit()
 
@@ -1025,6 +1026,13 @@ def main():
     output_dir = 'VolDiff_' + datetime.datetime.now().strftime("%d-%m-%Y_%H:%M")
     if os.name == 'nt':
         output_dir = 'VolDiff_' + datetime.datetime.now().strftime("%d-%m-%Y_%H%M")  # can't name file/dir with :
+    # IF --OUTPUT IS USED, USE CUSTOM OUTPUT DIR ================================================================
+    tmpval = False
+    for arg in sys.argv:
+        if tmpval = True:
+            output_dir = arg
+            tmpval = False
+        if arg == "--output": tmpval = True
     tmpfolder = output_dir + '/tmpfolder/'
     os.makedirs(tmpfolder)
 
