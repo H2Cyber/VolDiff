@@ -261,7 +261,7 @@ def diff_files(path1, path2, diffpath):
     with open(path1, "r") as file1:
         with open(path2, "r") as file2:
             diff = difflib.unified_diff(file1.readlines(), file2.readlines())
-            with open(diffpath, 'wr+') as file3:
+            with open(diffpath, 'r+') as file3:
                 print >> file3, ''.join(list(diff))
                 file3.seek(0)
                 lines = file3.readlines()
