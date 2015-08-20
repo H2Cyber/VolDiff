@@ -663,7 +663,7 @@ def get_hosts_contents(memory_image_file):
         hostsfolder = tmpfolder + "hosts/"
         if not os.path.isdir(hostsfolder):
             os.makedirs(hostsfolder)
-        process_var = Popen([path_to_volatility, "--profile", profile, "-f", memory_image_file, "dumpfiles", "-Q", qaddressb, "-D", hostsfolder], stdout=devnull, stderr=devnull)
+        process_var = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", memory_image_file, "dumpfiles", "-Q", qaddressb, "-D", hostsfolder], stdout=devnull, stderr=devnull)
         process_var.wait()
         dumped_hosts_filename = os.listdir(hostsfolder)
         if len(dumped_hosts_filename) == 1:
@@ -1060,7 +1060,7 @@ def main():
                 os.makedirs(dump_dir_baseline)
                 option = "--dump-dir=" + output_dir + "/malfind/dump_dir_baseline/"
                 file_dict[plugin + "baseline"] = open(output_dir + '/' + plugin + '/' + "baseline_" + plugin + ".txt", "w")
-                sub_procs[plugin + "baseline"] = Popen([path_to_volatility, "--profile", profile, "-f", baseline_memory_image, plugin, option], stdout=file_dict[plugin + "baseline"], stderr=devnull)
+                sub_procs[plugin + "baseline"] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", baseline_memory_image, plugin, option], stdout=file_dict[plugin + "baseline"], stderr=devnull)
                 proc_counter += 1
                 if proc_counter >= max_concurrent_subprocesses:
                     for pr in sub_procs:
@@ -1071,7 +1071,7 @@ def main():
                 os.makedirs(dump_dir_infected)
                 option = "--dump-dir=" + output_dir + "/malfind/dump_dir_infected/"
                 file_dict[plugin + "infected"] = open(output_dir + '/' + plugin + '/' + "infected_" + plugin + ".txt", "w")
-                sub_procs[plugin + "infected"] = Popen([path_to_volatility, "--profile", profile, "-f", infected_memory_image, plugin, option], stdout=file_dict[plugin + "infected"], stderr=devnull)
+                sub_procs[plugin + "infected"] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", infected_memory_image, plugin, option], stdout=file_dict[plugin + "infected"], stderr=devnull)
                 proc_counter += 1
                 if proc_counter >= max_concurrent_subprocesses:
                     for pr in sub_procs:
@@ -1083,7 +1083,7 @@ def main():
                 os.makedirs(dump_dir)
                 option = "--dump-dir=" + output_dir + "/malfind/dump_dir/"
                 file_dict[plugin] = open(output_dir + '/' + plugin + '/' + plugin + ".txt", "w")
-                sub_procs[plugin] = Popen([path_to_volatility, "--profile", profile, "-f", memory_image, plugin, option], stdout=file_dict[plugin], stderr=devnull)
+                sub_procs[plugin] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", memory_image, plugin, option], stdout=file_dict[plugin], stderr=devnull)
                 proc_counter += 1
                 if proc_counter >= max_concurrent_subprocesses:
                     for pr in sub_procs:
@@ -1094,7 +1094,7 @@ def main():
         elif plugin == "procdump":
             option = "--dump-dir=" + output_dir + "/procdump/"
             if mode == "dual":
-                sub_procs[plugin] = Popen([path_to_volatility, "--profile", profile, "-f", infected_memory_image, plugin, "-u", option], stdout=devnull, stderr=devnull)
+                sub_procs[plugin] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", infected_memory_image, plugin, "-u", option], stdout=devnull, stderr=devnull)
                 proc_counter += 1
                 if proc_counter >= max_concurrent_subprocesses:
                     for pr in sub_procs:
@@ -1102,7 +1102,7 @@ def main():
                     proc_counter = 0
                     sub_procs = {}
             else:
-                sub_procs[plugin] = Popen([path_to_volatility, "--profile", profile, "-f", memory_image, plugin, "-u", option], stdout=devnull, stderr=devnull)
+                sub_procs[plugin] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", memory_image, plugin, "-u", option], stdout=devnull, stderr=devnull)
                 proc_counter += 1
                 if proc_counter >= max_concurrent_subprocesses:
                     for pr in sub_procs:
@@ -1115,7 +1115,7 @@ def main():
         # option set, running vol.py processes in //:
         if mode == "dual":
             file_dict[plugin + "baseline"] = open(output_dir + '/' + plugin + '/' + "baseline_" + plugin + ".txt", "w")
-            sub_procs[plugin + "baseline"] = Popen([path_to_volatility, "--profile", profile, "-f", baseline_memory_image, plugin, option], stdout=file_dict[plugin + "baseline"], stderr=devnull)
+            sub_procs[plugin + "baseline"] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", baseline_memory_image, plugin, option], stdout=file_dict[plugin + "baseline"], stderr=devnull)
             proc_counter += 1
             if proc_counter >= max_concurrent_subprocesses:
                 for pr in sub_procs:
@@ -1123,7 +1123,7 @@ def main():
                 proc_counter = 0
                 sub_procs = {}
             file_dict[plugin + "infected"] = open(output_dir + '/' + plugin + '/' + "infected_" + plugin + ".txt", "w")
-            sub_procs[plugin + "infected"] = Popen([path_to_volatility, "--profile", profile, "-f", infected_memory_image, plugin, option], stdout=file_dict[plugin + "infected"], stderr=devnull)
+            sub_procs[plugin + "infected"] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", infected_memory_image, plugin, option], stdout=file_dict[plugin + "infected"], stderr=devnull)
             proc_counter += 1
             if proc_counter >= max_concurrent_subprocesses:
                 for pr in sub_procs:
@@ -1132,7 +1132,7 @@ def main():
                 sub_procs = {}
         else:
             file_dict[plugin] = open(output_dir + '/' + plugin + '/' + plugin + ".txt", "w")
-            sub_procs[plugin] = Popen([path_to_volatility, "--profile", profile, "-f", memory_image, plugin, option], stdout=file_dict[plugin], stderr=devnull)
+            sub_procs[plugin] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", memory_image, plugin, option], stdout=file_dict[plugin], stderr=devnull)
             proc_counter += 1
             if proc_counter >= max_concurrent_subprocesses:
                 for pr in sub_procs:
@@ -1641,10 +1641,10 @@ def main():
     for pid in pids_to_analyse:
         if mode == "dual":
             with open(impscanfolder + str(pid) + ".txt", "w") as f:
-                subprocesses[str(pid)] = Popen([path_to_volatility, "--profile", profile, "-f", infected_memory_image, plugin, "--pid=" + str(pid)], stdout=f, stderr=devnull)
+                subprocesses[str(pid)] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", infected_memory_image, plugin, "--pid=" + str(pid)], stdout=f, stderr=devnull)
         else:
             with open(impscanfolder + str(pid) + ".txt", "w") as f:
-                subprocesses[str(pid)] = Popen([path_to_volatility, "--profile", profile, "-f", memory_image, plugin, "--pid=" + str(pid)], stdout=f, stderr=devnull)
+                subprocesses[str(pid)] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", memory_image, plugin, "--pid=" + str(pid)], stdout=f, stderr=devnull)
         i += 1
         if i >= max_concurrent_subprocesses:
             for subproc in subprocesses:
@@ -1674,9 +1674,9 @@ def main():
             f.close()
         for offset in offsets:
             if mode == "dual":
-                subprocesses[offset] = Popen([path_to_volatility, "--profile", profile, "-f", infected_memory_image, "procdump", "--offset=" + offset, "--dump-dir=" + dumpfolder], stdout=devnull, stderr=devnull)
+                subprocesses[offset] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", infected_memory_image, "procdump", "--offset=" + offset, "--dump-dir=" + dumpfolder], stdout=devnull, stderr=devnull)
             else:
-                subprocesses[offset] = Popen([path_to_volatility, "--profile", profile, "-f", memory_image, "procdump", "--offset=" + offset, "--dump-dir=" + dumpfolder], stdout=devnull, stderr=devnull)
+                subprocesses[offset] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", memory_image, "procdump", "--offset=" + offset, "--dump-dir=" + dumpfolder], stdout=devnull, stderr=devnull)
             i += 1
             if i >= max_concurrent_subprocesses:
                 for subproc in subprocesses:
@@ -1684,9 +1684,9 @@ def main():
                 i = 0
                 subprocesses = {}
         if mode == "dual":
-            subprocesses[str(pid)] = Popen([path_to_volatility, "--profile", profile, "-f", infected_memory_image, "malfind", "--pid=" + str(pid), "--dump-dir=" + dumpfolder], stdout=devnull, stderr=devnull)
+            subprocesses[str(pid)] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", infected_memory_image, "malfind", "--pid=" + str(pid), "--dump-dir=" + dumpfolder], stdout=devnull, stderr=devnull)
         else:
-            subprocesses[str(pid)] = Popen([path_to_volatility, "--profile", profile, "-f", memory_image, "malfind", "--pid=" + str(pid), "--dump-dir=" + dumpfolder], stdout=devnull, stderr=devnull)
+            subprocesses[str(pid)] = Popen([sys.executable, path_to_volatility, "--profile", profile, "-f", memory_image, "malfind", "--pid=" + str(pid), "--dump-dir=" + dumpfolder], stdout=devnull, stderr=devnull)
         i += 1
         if i >= max_concurrent_subprocesses:
             for subproc in subprocesses:
