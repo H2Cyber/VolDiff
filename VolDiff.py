@@ -18,7 +18,7 @@ import hashlib
 from subprocess import Popen
 
 # VARIABLES ================================================================
-version = "2.1.3"
+version = "2.1.4"
 path_to_volatility = "vol.py"
 max_concurrent_subprocesses = 3
 diff_output_threshold = 100
