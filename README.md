@@ -2,7 +2,7 @@
 VolDiff: Malware Memory Footprint Analysis
 ==========================================
 
-[VolDiff](https://twitter.com/VolDiff) is a Python script that leverages the [Volatility](https://github.com/volatilityfoundation/volatility) framework to identify malware threats on Windows 7 memory images.
+VolDiff is a Python script that leverages the [Volatility](https://github.com/volatilityfoundation/volatility) framework to identify malware threats on Windows 7 memory images.
 
 VolDiff can be used to run a collection of Volatility plugins against memory images captured before and after malware execution. It creates a report that highlights system changes based on memory (RAM) analysis.
 
