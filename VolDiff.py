@@ -18,7 +18,7 @@ import hashlib
 from subprocess import Popen
 
 # VARIABLES ================================================================
-version = "2.1.4"
+version = "2.1.5"
 path_to_volatility = "vol.py"
 max_concurrent_subprocesses = 3
 diff_output_threshold = 100
@@ -190,7 +190,7 @@ def print_help():
     print ("--malware-checks      hunt and report suspicious anomalies (slow, recommended)")
     print ("--output-dir [dir]    custom directory to store analysis results")
     print ("--no-report           do not create a report")
-    print ("\nTested using Volatility 2.4 (vol.py) on Windows 7 images.")
+    print ("\nTested using Volatility 2.5 (vol.py) on Windows 7 images.")
     sys.exit()
 
 
@@ -204,7 +204,7 @@ def print_version():
 
 # PRINT DEPENDENCIES ================================================================
 def print_dependencies():
-    print ("Requires volatility 2.4 (vol.py) to be installed.")
+    print ("Requires volatility 2.5 (vol.py) to be installed.")
     sys.exit()
 
 
